@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui' show FontFeature;
 
 import 'note.dart';
 import 'notes_dao.dart';
