@@ -1,6 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -21,8 +23,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     final app = context.watch<AppState>();
     final Animal? animal = app.animals.byIdSync(widget.id);
     if (animal == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await app.animals.byId(widget.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final app2 = Provider.of<AppState>(context, listen: false);
+        await app2.animals.byId(widget.id);
         if (mounted) setState(() {});
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -85,7 +88,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                 );
                 if (ok == true) {
                   await context.read<AppState>().deleteAnimal(animal.id);
-                  if (context.mounted) context.go('/o/home');
+                  if (context.mounted) router.go('/o/home');
                 }
               },
             ),
@@ -134,7 +137,7 @@ class _InlineVideoState extends State<_InlineVideo> {
   void initState() {
     super.initState();
     if (widget.path.startsWith('http')) {
-      _c = VideoPlayerController.network(widget.path);
+      _c = VideoPlayerController.networkUrl(Uri.parse(widget.path));
     } else {
       _c = VideoPlayerController.file(File(widget.path));
     }

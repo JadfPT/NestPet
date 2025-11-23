@@ -1,5 +1,6 @@
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import '../app_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/auth_service.dart';
@@ -10,7 +11,7 @@ bool _validateNIF(String nif) {
   final digits = nif.split('').map(int.parse).toList();
   final weights = [9,8,7,6,5,4,3,2];
   var sum = 0;
-  for (var i = 0; i < 8; i++) sum += digits[i] * weights[i];
+  for (var i = 0; i < 8; i++) { sum += digits[i] * weights[i]; }
   final remainder = sum % 11;
   var check = 11 - remainder;
   if (check >= 10) check = 0;
@@ -38,6 +39,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() { _loading = true; });
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text;
+
+    String? snackMessage;
+    bool performLogin = false;
+    String? targetPath;
+
     try {
       if (_isRegister) {
         if (_role == UserRole.org) {
@@ -48,23 +54,33 @@ class _LoginScreenState extends State<LoginScreen> {
         await _auth.signUpEmail(email, pass);
         final user = _auth.currentUser();
         if (user == null) {
-          // Não avançar para a app; informar o utilizador para confirmar o email.
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registo efetuado. Verifique o seu email para confirmar a conta antes de iniciar sessão.')));
-          return;
+          // Registo criado, mas sem sessão ativa — informar utilizador.
+          snackMessage = 'Registo efetuado. Verifique o seu email para confirmar a conta antes de iniciar sessão.';
+        } else {
+          performLogin = true;
         }
       } else {
         await _auth.signInEmail(email, pass);
         final user = _auth.currentUser();
         if (user == null) throw Exception('Login falhou');
+        performLogin = true;
       }
 
-      final app = context.read<AppState>();
-      app.login(_role);
-      if (_role == UserRole.org) context.go('/o/home'); else context.go('/u/home');
+      if (performLogin) {
+        targetPath = _role == UserRole.org ? '/o/home' : '/u/home';
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      snackMessage = e.toString();
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (context.mounted) {
+        if (snackMessage != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(snackMessage)));
+        if (performLogin) {
+          final app = context.read<AppState>();
+          app.login(_role);
+          router.go(targetPath!);
+        }
+        setState(() { _loading = false; });
+      }
     }
   }
 

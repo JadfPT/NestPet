@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
+import '../../app_router.dart';
 
 import '../../providers/app_state.dart';
 import '../../data/animal_repository.dart';
@@ -35,7 +35,9 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     // Require authenticated user for uploads
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor inicie sessão antes de enviar imagens.')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor inicie sessão antes de enviar imagens.')));
+      }
       return;
     }
     final res = await FilePicker.platform.pickFiles(
@@ -66,7 +68,9 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
         print('upload failed: $e');
         // ignore: avoid_print
         print(st);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Falha ao subir imagem: ${e.toString()} — será guardada localmente')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Falha ao subir imagem: ${e.toString()} — será guardada localmente')));
+        }
       }
     }
     if (mounted) setState(() {});
@@ -90,8 +94,10 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
       pesoKg: peso, tamanho: tamanho, descricao: descricao, media: media,
     );
     await app.addAnimal(a);               // <-- notifica a UI
-    if (!mounted) return;
-    context.go('/o/home');                // <-- volta para home (evita “ecrã preto”)
+    if (!context.mounted) return;
+    // use global router to avoid using BuildContext across async gaps
+    // import at top: see app_router.dart
+    router.go('/o/home');                // <-- volta para home (evita “ecrã preto”)
   }
 
   @override
@@ -108,7 +114,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                 children: [
                   Expanded(child: TextFormField(decoration: const InputDecoration(labelText: 'Nome'), onSaved: (v)=> nome=v?.trim()??'')),
                   const SizedBox(width: 12),
-                  Expanded(child: DropdownButtonFormField(value: tipo, items: const [
+                  Expanded(child: DropdownButtonFormField(initialValue: tipo, items: const [
                     DropdownMenuItem(value: 'Cão', child: Text('Cão')),
                     DropdownMenuItem(value: 'Gato', child: Text('Gato')),
                   ], onChanged: (v)=> setState(()=> tipo=v!), decoration: const InputDecoration(labelText: 'Tipo'))),
@@ -116,12 +122,12 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
               ),
               Row(
                 children: [
-                  Expanded(child: DropdownButtonFormField(value: sexo, items: const [
+                  Expanded(child: DropdownButtonFormField(initialValue: sexo, items: const [
                     DropdownMenuItem(value: 'M', child: Text('Macho')),
                     DropdownMenuItem(value: 'F', child: Text('Fêmea')),
                   ], onChanged: (v)=> setState(()=> sexo=v!), decoration: const InputDecoration(labelText: 'Sexo'))),
                   const SizedBox(width: 12),
-                  Expanded(child: DropdownButtonFormField(value: tamanho, items: const [
+                  Expanded(child: DropdownButtonFormField(initialValue: tamanho, items: const [
                     DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),
                     DropdownMenuItem(value: 'médio', child: Text('Médio')),
                     DropdownMenuItem(value: 'grande', child: Text('Grande')),

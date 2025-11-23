@@ -39,8 +39,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isMe ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceVariant,
+                      decoration: BoxDecoration(
+                      color: isMe ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(m.text),
@@ -91,6 +91,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     try {
       final rows = await context.read<AppState>().chat.fetchMessages(widget.animalId);
       final list = rows.map((r) => _mapToMessage(r)).toList();
+      if (!mounted) return;
       setState(() {
         _messages.clear();
         _messages.addAll(list);
@@ -101,12 +102,18 @@ class _UserChatScreenState extends State<UserChatScreen> {
   }
 
   Message _mapToMessage(Map<String, dynamic> r) {
-    return Message(
-      id: (r['id'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
-      from: (r['from_role'] ?? (r['user_id'] != null ? 'user' : 'org')).toString(),
-      text: (r['content'] ?? '').toString(),
-      sentAt: r['created_at'] != null ? DateTime.parse(r['created_at'].toString()) : DateTime.now(),
-    );
+    final id = (r['id'] ?? DateTime.now().millisecondsSinceEpoch).toString();
+    String from;
+    if (r['from_role'] != null) {
+      from = r['from_role'].toString();
+    } else if (r['user_id'] != null) {
+      from = 'user';
+    } else {
+      from = 'org';
+    }
+    final text = (r['content'] ?? '').toString();
+    final sentAt = r['created_at'] != null ? DateTime.parse(r['created_at'].toString()) : DateTime.now();
+    return Message(id: id, from: from, text: text, sentAt: sentAt);
   }
 
   Future<void> _sendMessage() async {
@@ -119,11 +126,13 @@ class _UserChatScreenState extends State<UserChatScreen> {
       ctrl.clear();
       // optimistic add
       setState(() {
-        _messages.add(Message(id: DateTime.now().millisecondsSinceEpoch.toString(), from: userId == null ? 'user' : userId, text: text, sentAt: DateTime.now()));
+        _messages.add(Message(id: DateTime.now().millisecondsSinceEpoch.toString(), from: userId ?? 'user', text: text, sentAt: DateTime.now()));
       });
     } catch (e) {
       // show error
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao enviar mensagem')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao enviar mensagem')));
+      }
     }
   }
 }

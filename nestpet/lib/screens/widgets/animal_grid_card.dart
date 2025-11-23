@@ -76,7 +76,7 @@ class _VideoThumbState extends State<_VideoThumb> {
   void initState() {
     super.initState();
     if (widget.path.startsWith('http')) {
-      _c = VideoPlayerController.network(widget.path)
+      _c = VideoPlayerController.networkUrl(Uri.parse(widget.path))
         ..initialize().then((_) { if (mounted) setState(() {}); _c.setVolume(0); _c.setLooping(true); _c.play(); });
     } else {
       _c = VideoPlayerController.file(File(widget.path))

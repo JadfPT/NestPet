@@ -34,7 +34,7 @@ class EmptyState extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
               ),
               if (actionText != null && onAction != null) ...[
                 const SizedBox(height: 16),

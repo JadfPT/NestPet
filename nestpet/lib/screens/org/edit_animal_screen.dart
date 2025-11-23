@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:go_router/go_router.dart';
+import '../../app_router.dart';
 
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
@@ -58,7 +58,9 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
         print('persistPickedFile failed: $e');
         // ignore: avoid_print
         print(st);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao aceder ficheiro local')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao aceder ficheiro local')));
+        }
         continue;
       }
       // debug: confirmar que o ficheiro existe no caminho copiado
@@ -78,7 +80,9 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
         print('upload failed: $e');
         // ignore: avoid_print
         print(st);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Falha ao subir imagem: ${e.toString()} — ficará local')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Falha ao subir imagem: ${e.toString()} — ficará local')));
+        }
       }
     }
     if (mounted) setState(() {});
@@ -96,12 +100,12 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             TextFormField(initialValue: a.nome, decoration: const InputDecoration(labelText: 'Nome'), onSaved: (v)=> a.nome=v?.trim()??a.nome),
             Row(
               children: [
-                Expanded(child: DropdownButtonFormField(value: a.tipo, items: const [
+                Expanded(child: DropdownButtonFormField(initialValue: a.tipo, items: const [
                   DropdownMenuItem(value: 'Cão', child: Text('Cão')),
                   DropdownMenuItem(value: 'Gato', child: Text('Gato')),
                 ], onChanged: (v)=> setState(()=> a.tipo=v! ), decoration: const InputDecoration(labelText: 'Tipo'))),
                 const SizedBox(width: 12),
-                Expanded(child: DropdownButtonFormField(value: a.sexo, items: const [
+                Expanded(child: DropdownButtonFormField(initialValue: a.sexo, items: const [
                   DropdownMenuItem(value: 'M', child: Text('Macho')),
                   DropdownMenuItem(value: 'F', child: Text('Fêmea')),
                 ], onChanged: (v)=> setState(()=> a.sexo=v! ), decoration: const InputDecoration(labelText: 'Sexo'))),
@@ -109,7 +113,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             Row(
               children: [
-                Expanded(child: DropdownButtonFormField(value: a.tamanho, items: const [
+                Expanded(child: DropdownButtonFormField(initialValue: a.tamanho, items: const [
                   DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),
                   DropdownMenuItem(value: 'médio', child: Text('Médio')),
                   DropdownMenuItem(value: 'grande', child: Text('Grande')),
@@ -156,8 +160,8 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
               onPressed: () async {
                 form.currentState?.save();
                 await context.read<AppState>().updateAnimal(a);
-                if (!mounted) return;
-                context.go('/o/home');
+                if (!context.mounted) return;
+                router.go('/o/home');
               },
               child: const Text('Guardar'),
             ),

@@ -34,7 +34,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
             const Text('Filtros', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: tipo,
+              initialValue: tipo,
               decoration: const InputDecoration(labelText: 'Tipo'),
               items: const [
                 DropdownMenuItem(value: 'Cão', child: Text('Cão')),
@@ -43,7 +43,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
               onChanged: (v) => setState(() => tipo = v),
             ),
             DropdownButtonFormField<String>(
-              value: tamanho,
+              initialValue: tamanho,
               decoration: const InputDecoration(labelText: 'Tamanho'),
               items: const [
                 DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),

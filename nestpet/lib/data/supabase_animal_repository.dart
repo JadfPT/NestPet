@@ -13,10 +13,11 @@ class SupabaseAnimalRepository {
   /// Refresh cache from Supabase and return list
   Future<List<Animal>> refresh() async {
     final res = await _client.from('animals').select().order('created_at', ascending: false);
-    final rows = res as List<dynamic>;
+    // ignore: unnecessary_cast
+    final list = (res as List).map((r) => _mapToAnimal(r as Map<String, dynamic>)).toList();
     _cache
       ..clear()
-      ..addAll(rows.map((r) => _mapToAnimal(r as Map<String, dynamic>)));
+      ..addAll(list);
     return _cache;
   }
 
@@ -38,6 +39,7 @@ class SupabaseAnimalRepository {
     if (cached != null) return cached;
     final res = await _client.from('animals').select().eq('id', id).maybeSingle();
     if (res == null) return null;
+    // ignore: unnecessary_cast
     final a = _mapToAnimal(res as Map<String, dynamic>);
     _cache.add(a);
     return a;
