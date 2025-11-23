@@ -8,7 +8,8 @@ import '../../providers/app_state.dart';
 import '../../data/animal_repository.dart';
 import '../../models/animal.dart';
 import 'package:uuid/uuid.dart';
-import '../../models/animal.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/storage_repository.dart';
 
 
 class AddAnimalScreen extends StatefulWidget {
@@ -27,8 +28,16 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   String tamanho = 'médio';
   String descricao = '';
   final List<MediaItem> media = [];
+  final String _animalId = const Uuid().v4();
+  final _storage = StorageRepository();
 
   Future<void> _pickMedia() async {
+    // Require authenticated user for uploads
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor inicie sessão antes de enviar imagens.')));
+      return;
+    }
     final res = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
@@ -41,7 +50,24 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
       final ext = path.split('.').last.toLowerCase();
       final type = ['mp4','mov','avi'].contains(ext) ? 'video' : 'image';
       final stored = await AnimalRepository.persistPickedFile(path);
+      // adiciona localmente para preview imediato
       media.add(MediaItem(path: stored, type: type));
+      // tenta fazer upload para Supabase (coloca em animals/<animalId>/<filename>)
+      final filename = stored.split(Platform.pathSeparator).last;
+      final dest = 'animals/$_animalId/$filename';
+      try {
+        final url = await _storage.uploadAnimalImage(File(stored), dest);
+        // substitui o caminho local pelo URL público para uso posterior
+        final idx = media.indexWhere((m) => m.path == stored);
+        if (idx != -1) media[idx].path = url;
+      } catch (e, st) {
+        // falhou upload, mantém local path e mostra aviso mais informativo
+        // ignore: avoid_print
+        print('upload failed: $e');
+        // ignore: avoid_print
+        print(st);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Falha ao subir imagem: ${e.toString()} — será guardada localmente')));
+      }
     }
     if (mounted) setState(() {});
   }
@@ -131,7 +157,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: m.type == 'image'
-                              ? Image.file(File(m.path), fit: BoxFit.cover)
+                              ? (m.path.startsWith('http') ? Image.network(m.path, fit: BoxFit.cover) : Image.file(File(m.path), fit: BoxFit.cover))
                               : Container(color: Colors.black12, alignment: Alignment.center, child: const Icon(Icons.play_circle)),
                           ),
                         ),

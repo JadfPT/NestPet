@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../data/animal_repository.dart';
 import '../../models/animal.dart';
+import '../../data/storage_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EditAnimalScreen extends StatefulWidget {
   final String id;
@@ -23,10 +25,24 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   @override
   void initState() {
     super.initState();
-    a = context.read<AppState>().animals.byId(widget.id)!;
+    final cached = context.read<AppState>().animals.byIdSync(widget.id);
+    if (cached != null) {
+      a = cached;
+    } else {
+      a = Animal(id: widget.id, nome: '', tipo: 'Cão', sexo: 'M', idadeMeses: 0, pesoKg: 0.0, tamanho: 'médio', descricao: '', media: []);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final fetched = await context.read<AppState>().animals.byId(widget.id);
+        if (fetched != null && mounted) setState(() { a = fetched; });
+      });
+    }
   }
 
   Future<void> _pickMedia() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor inicie sessão antes de enviar imagens.')));
+      return;
+    }
     final res = await FilePicker.platform.pickFiles(allowMultiple: true, type: FileType.custom, allowedExtensions: ['jpg','jpeg','png','mp4','mov','avi']);
     if (res == null) return;
     for (final f in res.files) {
@@ -34,8 +50,36 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
       final path = f.path!;
       final ext = path.split('.').last.toLowerCase();
       final type = ['mp4','mov','avi'].contains(ext) ? 'video' : 'image';
-      final stored = await AnimalRepository.persistPickedFile(path);
+      String stored;
+      try {
+        stored = await AnimalRepository.persistPickedFile(path);
+      } catch (e, st) {
+        // ignore: avoid_print
+        print('persistPickedFile failed: $e');
+        // ignore: avoid_print
+        print(st);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao aceder ficheiro local')));
+        continue;
+      }
+      // debug: confirmar que o ficheiro existe no caminho copiado
+      // ignore: avoid_print
+      print('Picked stored path: $stored (exists=${File(stored).existsSync()})');
       a.media.add(MediaItem(path: stored, type: type));
+      // upload para supabase
+      final filename = stored.split(Platform.pathSeparator).last;
+      final dest = 'animals/${a.id}/$filename';
+      try {
+        final url = await StorageRepository().uploadAnimalImage(File(stored), dest);
+        // substituir local path pelo url
+        final idx = a.media.indexWhere((m) => m.path == stored);
+        if (idx != -1) a.media[idx].path = url;
+      } catch (e, st) {
+        // ignore: avoid_print
+        print('upload failed: $e');
+        // ignore: avoid_print
+        print(st);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Falha ao subir imagem: ${e.toString()} — ficará local')));
+      }
     }
     if (mounted) setState(() {});
   }
@@ -92,12 +136,12 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
                 return Stack(
                   children: [
                     Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: m.type == 'image'
-                          ? Image.file(File(m.path), fit: BoxFit.cover)
-                          : Container(color: Colors.black12, alignment: Alignment.center, child: const Icon(Icons.play_circle)),
-                      ),
+                          child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: m.type == 'image'
+                                ? (m.path.startsWith('http') ? Image.network(m.path, fit: BoxFit.cover, errorBuilder: (c,e,s) => const ColoredBox(color: Colors.black12)) : Image.file(File(m.path), fit: BoxFit.cover))
+                                : (m.path.startsWith('http') ? Container(color: Colors.black12, alignment: Alignment.center, child: const Icon(Icons.play_circle)) : Container(color: Colors.black12, alignment: Alignment.center, child: const Icon(Icons.play_circle))),
+                            ),
                     ),
                     Positioned(
                       right: -8, top: -8,

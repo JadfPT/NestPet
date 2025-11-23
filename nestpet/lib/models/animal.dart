@@ -1,24 +1,29 @@
-import 'package:hive/hive.dart';
-part 'animal.g.dart';
-
-@HiveType(typeId: 10)
 class MediaItem {
-  @HiveField(0) String path;   // caminho local
-  @HiveField(1) String type;   // "image" | "video"
+  String path; // caminho local ou URL
+  String type; // "image" | "video"
   MediaItem({required this.path, required this.type});
+
+  factory MediaItem.fromJson(Map<String, dynamic> j) => MediaItem(
+        path: j['path'] ?? '',
+        type: j['type'] ?? 'image',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'path': path,
+        'type': type,
+      };
 }
 
-@HiveType(typeId: 11)
-class Animal extends HiveObject {
-  @HiveField(0) String id;
-  @HiveField(1) String nome;
-  @HiveField(2) String tipo;
-  @HiveField(3) String sexo;
-  @HiveField(4) int idadeMeses;
-  @HiveField(5) double pesoKg;
-  @HiveField(6) String tamanho;
-  @HiveField(7) String descricao;
-  @HiveField(8) List<MediaItem> media;
+class Animal {
+  String id;
+  String nome;
+  String tipo;
+  String sexo;
+  int idadeMeses;
+  double pesoKg;
+  String tamanho;
+  String descricao;
+  List<MediaItem> media;
 
   Animal({
     required this.id,
@@ -31,4 +36,33 @@ class Animal extends HiveObject {
     required this.descricao,
     required this.media,
   });
+
+  factory Animal.fromJson(Map<String, dynamic> j) => Animal(
+        id: j['id']?.toString() ?? '',
+        nome: j['nome'] ?? j['name'] ?? '',
+        tipo: j['tipo'] ?? j['type'] ?? 'Cão',
+        sexo: j['sexo'] ?? j['sex'] ?? 'M',
+        idadeMeses: (j['idadeMeses'] ?? 0) is int ? (j['idadeMeses'] ?? 0) as int : int.tryParse((j['idadeMeses'] ?? '0').toString()) ?? 0,
+        pesoKg: (j['pesoKg'] ?? 0.0) is double ? (j['pesoKg'] ?? 0.0) as double : double.tryParse((j['pesoKg'] ?? '0').toString()) ?? 0.0,
+        tamanho: j['tamanho'] ?? 'médio',
+        descricao: j['descricao'] ?? j['description'] ?? '',
+        media: (j['media'] ?? []).map<MediaItem>((m) {
+          if (m is MediaItem) return m;
+          if (m is String) return MediaItem(path: m, type: m.endsWith('.mp4') ? 'video' : 'image');
+          if (m is Map<String, dynamic>) return MediaItem.fromJson(m);
+          return MediaItem(path: m.toString(), type: 'image');
+        }).toList(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nome': nome,
+        'tipo': tipo,
+        'sexo': sexo,
+        'idadeMeses': idadeMeses,
+        'pesoKg': pesoKg,
+        'tamanho': tamanho,
+        'descricao': descricao,
+        'media': media.map((m) => m.toJson()).toList(),
+      };
 }

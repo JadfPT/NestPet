@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../providers/app_state.dart';
+import '../../models/message.dart';
 
 class UserChatScreen extends StatefulWidget {
   final String animalId;
@@ -12,11 +17,12 @@ class UserChatScreen extends StatefulWidget {
 
 class _UserChatScreenState extends State<UserChatScreen> {
   final ctrl = TextEditingController();
+  final List<Message> _messages = [];
+  StreamSubscription<Map<String, dynamic>>? _sub;
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    final msgs = app.chat.forAnimal(widget.animalId);
+    final msgs = _messages;
     return Scaffold(
       appBar: AppBar(title: const Text('Chat')),
       body: Column(
@@ -50,10 +56,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                 Expanded(child: TextField(controller: ctrl, decoration: const InputDecoration(hintText: 'Escrever...'))),
                 IconButton(
                   onPressed: () {
-                    if (ctrl.text.trim().isEmpty) return;
-                    app.chat.send(widget.animalId, 'user', ctrl.text.trim());
-                    ctrl.clear();
-                    setState(() {});
+                    _sendMessage();
                   },
                   icon: const Icon(Icons.send),
                 ),
@@ -63,5 +66,64 @@ class _UserChatScreenState extends State<UserChatScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+    _sub = context.read<AppState>().chat.subscribeNewMessages(widget.animalId).listen((map) {
+      final m = _mapToMessage(map);
+      setState(() {
+        _messages.add(m);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMessages() async {
+    try {
+      final rows = await context.read<AppState>().chat.fetchMessages(widget.animalId);
+      final list = rows.map((r) => _mapToMessage(r)).toList();
+      setState(() {
+        _messages.clear();
+        _messages.addAll(list);
+      });
+    } catch (e) {
+      setState(() {});
+    }
+  }
+
+  Message _mapToMessage(Map<String, dynamic> r) {
+    return Message(
+      id: (r['id'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
+      from: (r['from_role'] ?? (r['user_id'] != null ? 'user' : 'org')).toString(),
+      text: (r['content'] ?? '').toString(),
+      sentAt: r['created_at'] != null ? DateTime.parse(r['created_at'].toString()) : DateTime.now(),
+    );
+  }
+
+  Future<void> _sendMessage() async {
+    final text = ctrl.text.trim();
+    if (text.isEmpty) return;
+    final user = Supabase.instance.client.auth.currentUser;
+    final userId = user?.id;
+    try {
+      await context.read<AppState>().chat.send(widget.animalId, userId ?? 'anonymous', text);
+      ctrl.clear();
+      // optimistic add
+      setState(() {
+        _messages.add(Message(id: DateTime.now().millisecondsSinceEpoch.toString(), from: userId == null ? 'user' : userId, text: text, sentAt: DateTime.now()));
+      });
+    } catch (e) {
+      // show error
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao enviar mensagem')));
+    }
   }
 }

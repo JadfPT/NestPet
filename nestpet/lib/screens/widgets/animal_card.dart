@@ -20,7 +20,9 @@ class AnimalCard extends StatelessWidget {
         child: Row(
           children: [
             if (hasMedia && isImage)
-              Image.file(File(path!), width: 120, height: 120, fit: BoxFit.cover)
+              (path!.startsWith('http')
+                ? Image.network(path, width: 120, height: 120, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(width:120,height:120,color:Colors.black12))
+                : Image.file(File(path), width: 120, height: 120, fit: BoxFit.cover))
             else
               Container(
                 width: 120, height: 120,

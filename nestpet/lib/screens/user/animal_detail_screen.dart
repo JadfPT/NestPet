@@ -19,7 +19,14 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final Animal animal = app.animals.byId(widget.id)!;
+    final Animal? animal = app.animals.byIdSync(widget.id);
+    if (animal == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await app.animals.byId(widget.id);
+        if (mounted) setState(() {});
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final isFav = app.isFav(animal.id);
     final isOrg = app.role == UserRole.org;
 
@@ -29,11 +36,16 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       }
       return SizedBox(
         height: 280,
-        child: PageView.builder(
+          child: PageView.builder(
           itemCount: animal.media.length,
           itemBuilder: (_, i) {
             final m = animal.media[i];
-            if (m.type == 'image') return Image.file(File(m.path), fit: BoxFit.cover);
+            if (m.type == 'image') {
+              if (m.path.startsWith('http')) {
+                return Image.network(m.path, fit: BoxFit.cover, errorBuilder: (c, e, s) => const ColoredBox(color: Colors.black12));
+              }
+              return Image.file(File(m.path), fit: BoxFit.cover);
+            }
             return _InlineVideo(path: m.path);
           },
         ),
@@ -121,8 +133,12 @@ class _InlineVideoState extends State<_InlineVideo> {
   @override
   void initState() {
     super.initState();
-    _c = VideoPlayerController.file(File(widget.path))
-      ..initialize().then((_) {
+    if (widget.path.startsWith('http')) {
+      _c = VideoPlayerController.network(widget.path);
+    } else {
+      _c = VideoPlayerController.file(File(widget.path));
+    }
+    _c.initialize().then((_) {
         if (!mounted) return;
         setState(() {});
         _c..setLooping(true)..setVolume(0)..play();

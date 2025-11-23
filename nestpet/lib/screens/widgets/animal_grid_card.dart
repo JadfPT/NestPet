@@ -26,6 +26,9 @@ class AnimalGridCard extends StatelessWidget {
     Widget media() {
       if (first == null) return const ColoredBox(color: Colors.black12);
       if (first.type == 'video') return _VideoThumb(path: first.path);
+      if (first.path.startsWith('http')) {
+        return Image.network(first.path, fit: BoxFit.cover, errorBuilder: (c,e,s) => const ColoredBox(color: Colors.black12));
+      }
       return Image.file(File(first.path), fit: BoxFit.cover);
     }
 
@@ -72,8 +75,13 @@ class _VideoThumbState extends State<_VideoThumb> {
   @override
   void initState() {
     super.initState();
-    _c = VideoPlayerController.file(File(widget.path))
-      ..initialize().then((_) { if (mounted) setState(() {}); _c.setVolume(0); _c.setLooping(true); _c.play(); });
+    if (widget.path.startsWith('http')) {
+      _c = VideoPlayerController.network(widget.path)
+        ..initialize().then((_) { if (mounted) setState(() {}); _c.setVolume(0); _c.setLooping(true); _c.play(); });
+    } else {
+      _c = VideoPlayerController.file(File(widget.path))
+        ..initialize().then((_) { if (mounted) setState(() {}); _c.setVolume(0); _c.setLooping(true); _c.play(); });
+    }
   }
   @override
   void dispose() { _c.dispose(); super.dispose(); }
