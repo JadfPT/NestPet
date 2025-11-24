@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _auth = AuthService();
   bool _loading = false;
   bool _checkedQuery = false;
+  bool _obscurePassword = true;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -164,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Password field
+                        // Password field with toggle visibility
                         TextFormField(
                           controller: _passCtrl,
                           decoration: InputDecoration(
@@ -174,9 +175,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: primary.withOpacity(0.35))),
-                            suffixIcon: Icon(Icons.visibility_off, color: primary.withOpacity(0.6)),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: primary.withOpacity(0.6)),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
                           ),
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           validator: (v) => (v == null || v.length < 6) ? 'Password min 6' : null,
                         ),
                         const SizedBox(height: 18),
