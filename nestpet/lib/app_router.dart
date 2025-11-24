@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 
 import 'providers/app_state.dart';
 
-// --- USER screens
-import 'screens/login_screen.dart';
+// --- AUTH screens
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/welcome_screen.dart';
+import 'screens/auth/register_user_screen.dart';
+import 'screens/auth/register_org_screen.dart';
 import 'screens/user/user_home_screen.dart';
 import 'screens/user/user_favorites_screen.dart';
 import 'screens/user/profile_screen.dart';
@@ -91,9 +94,12 @@ final _orgShellKey  = GlobalKey<NavigatorState>();
 
 final router = GoRouter(
   navigatorKey: _rootKey,
-  initialLocation: '/',
+  initialLocation: '/welcome',
   routes: [
     GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
+    GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
+    GoRoute(path: '/register/user', builder: (_, __) => const RegisterUserScreen()),
+    GoRoute(path: '/register/org', builder: (_, __) => const RegisterOrgScreen()),
 
     // USER (shell)
     ShellRoute(
@@ -136,9 +142,10 @@ final router = GoRouter(
     ),
   ],
   redirect: (ctx, st) {
-    final role = ctx.read<AppState>().role;
-    final loc = st.fullPath ?? '/';
-    if (role == null && loc != '/') return '/';
+      final role = ctx.read<AppState>().role;
+      final loc = st.fullPath ?? '/';
+      // Allow unauthenticated users to visit the welcome and registration screens.
+      if (role == null && loc != '/' && loc != '/welcome' && loc != '/register/user' && loc != '/register/org') return '/';
     if (role == UserRole.user && (loc == '/' || loc.startsWith('/o/'))) return '/u/home';
     if (role == UserRole.org  && (loc == '/' || loc.startsWith('/u/'))) return '/o/home';
     return null;

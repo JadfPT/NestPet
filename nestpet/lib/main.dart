@@ -50,6 +50,7 @@ class NestPetApp extends StatelessWidget {
       value: state,
       child: MaterialApp.router(
         title: 'NestPet',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: colorScheme,
           scaffoldBackgroundColor: colorScheme.background,
