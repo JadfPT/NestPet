@@ -14,6 +14,7 @@ import 'screens/user/user_favorites_screen.dart';
 import 'screens/user/profile_screen.dart';
 import 'screens/user/animal_detail_screen.dart';
 import 'screens/user/chat_screen.dart';
+import 'screens/common/messages_screen.dart';
 
 // --- ORG screens
 import 'screens/org/my_animals_screen.dart';
@@ -25,30 +26,88 @@ import 'screens/org/chat_screen.dart';
 // Shells de bottom bar (como já tinhas)
 class _UserShell extends StatelessWidget {
   final Widget child;
-  const _UserShell({required this.child, super.key});
+  const _UserShell({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final l = GoRouterState.of(context).uri.toString();
-    int idx = 1;
-    if (l.startsWith('/u/favorites')) idx = 0;
-    if (l.startsWith('/u/profile')) idx = 2;
+    final primary = Theme.of(context).colorScheme.primary;
+    const pillHeight = 58.0;
+    const fabSize = 56.0;
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: idx,
-        onDestinationSelected: (i) {
-          switch (i) {
-            case 0: context.go('/u/favorites'); break;
-            case 1: context.go('/u/home'); break;
-            case 2: context.go('/u/profile'); break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.favorite_border), selectedIcon: Icon(Icons.favorite), label: 'Favoritos'),
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Início'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
+      body: Stack(
+        children: [
+          // leave space at bottom so content doesn't get hidden by the bar (including system inset)
+          Padding(padding: EdgeInsets.only(bottom: bottomInset + pillHeight + 12), child: child),
+
+          // bottom full-width bar extended to the absolute bottom (covers system inset)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: pillHeight + bottomInset,
+              child: Container(
+                height: pillHeight + bottomInset,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: primary,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8)],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      onPressed: () => context.go('/u/favorites'),
+                      icon: const Icon(Icons.star_border),
+                      color: Colors.white,
+                    ),
+
+                    // center home inside the bar
+                    GestureDetector(
+                      onTap: () => context.go('/u/home'),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: const BoxDecoration(
+                          color: Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.home, color: Colors.white, size: 26),
+                      ),
+                    ),
+
+                    IconButton(
+                      onPressed: () => context.go('/u/profile'),
+                      icon: const Icon(Icons.person_outline),
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // floating messages button positioned above the bar on the right (moved further right)
+          Positioned(
+            right: 20,
+            bottom: bottomInset + pillHeight - (fabSize / 2),
+            child: GestureDetector(
+              onTap: () => context.go('/messages'),
+              child: Container(
+                width: fabSize,
+                height: fabSize,
+                decoration: BoxDecoration(
+                  color: primary,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
+                ),
+                child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -57,30 +116,82 @@ class _UserShell extends StatelessWidget {
 
 class _OrgShell extends StatelessWidget {
   final Widget child;
-  const _OrgShell({required this.child, super.key});
+  const _OrgShell({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final l = GoRouterState.of(context).uri.toString();
-    int idx = 1;
-    if (l.startsWith('/o/add')) idx = 0;
-    if (l.startsWith('/o/profile')) idx = 2;
+    final primary = Theme.of(context).colorScheme.primary;
+    const pillHeight = 58.0;
+    const fabSize = 56.0;
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: idx,
-        onDestinationSelected: (i) {
-          switch (i) {
-            case 0: context.go('/o/add'); break;
-            case 1: context.go('/o/home'); break;
-            case 2: context.go('/o/profile'); break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.add_box_outlined), selectedIcon: Icon(Icons.add_box), label: 'Adicionar'),
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Início'),
-          NavigationDestination(icon: Icon(Icons.apartment), label: 'Perfil'),
+      body: Stack(
+        children: [
+          Padding(padding: EdgeInsets.only(bottom: bottomInset + pillHeight + 12), child: child),
+
+          // Org: full-width bottom bar extended to bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: pillHeight + bottomInset,
+              child: Container(
+                height: pillHeight + bottomInset,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: primary,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8)],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      onPressed: () => context.go('/o/add'),
+                      icon: const Icon(Icons.add_box_outlined),
+                      color: Colors.white,
+                    ),
+
+                    GestureDetector(
+                      onTap: () => context.go('/o/home'),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.transparent),
+                        child: const Icon(Icons.home, color: Colors.white, size: 26),
+                      ),
+                    ),
+
+                    IconButton(
+                      onPressed: () => context.go('/o/profile'),
+                      icon: const Icon(Icons.apartment),
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          Positioned(
+            right: 20,
+            bottom: bottomInset + pillHeight - (fabSize / 2),
+            child: GestureDetector(
+              onTap: () => context.go('/messages'),
+              child: Container(
+                width: fabSize,
+                height: fabSize,
+                decoration: BoxDecoration(
+                  color: primary,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
+                ),
+                child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -100,6 +211,7 @@ final router = GoRouter(
     GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
     GoRoute(path: '/register/user', builder: (_, __) => const RegisterUserScreen()),
     GoRoute(path: '/register/org', builder: (_, __) => const RegisterOrgScreen()),
+    GoRoute(path: '/messages', builder: (_, __) => const MessagesScreen()),
 
     // USER (shell)
     ShellRoute(
@@ -146,8 +258,9 @@ final router = GoRouter(
       final loc = st.fullPath ?? '/';
       // Allow unauthenticated users to visit the welcome and registration screens.
       if (role == null && loc != '/' && loc != '/welcome' && loc != '/register/user' && loc != '/register/org') return '/';
-    if (role == UserRole.user && (loc == '/' || loc.startsWith('/o/'))) return '/u/home';
-    if (role == UserRole.org  && (loc == '/' || loc.startsWith('/u/'))) return '/o/home';
+    // If we already have a role restored at startup, allow redirecting from '/' or '/welcome' to the correct shell.
+    if (role == UserRole.user && (loc == '/' || loc == '/welcome' || loc.startsWith('/o/'))) return '/u/home';
+    if (role == UserRole.org  && (loc == '/' || loc == '/welcome' || loc.startsWith('/u/'))) return '/o/home';
     return null;
   },
 );

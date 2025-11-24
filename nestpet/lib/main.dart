@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'app_router.dart';
 import 'providers/app_state.dart';
+import 'services/session_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,12 +21,34 @@ void main() async {
   };
 
   final state = AppState();
-  // Inicialização assíncrona do estado da app — não bloquear a UI na abertura
-  state.init().catchError((e, st) {
+  // Inicialização do estado da app — aguardamos para restaurar sessão antes de construir a UI
+  try {
+    await state.init();
+  } catch (e, st) {
     // ignore: avoid_print
     print('AppState.init error: $e');
     // ignore: avoid_print
     print(st);
+  }
+
+  // Also listen for Supabase auth state changes and restore role if a session appears.
+  Supabase.instance.client.auth.onAuthStateChange.listen((event) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      // prefer server metadata role
+      try {
+        final meta = user.userMetadata;
+        final serverRole = meta != null && meta['role'] != null ? meta['role'] as String? : null;
+        if (serverRole != null) {
+          state.login(serverRole == 'org' ? UserRole.org : UserRole.user);
+          return;
+        }
+      } catch (_) {}
+
+      final saved = await SessionService.loadRole();
+      if (saved != null) state.login(saved == 'org' ? UserRole.org : UserRole.user);
+      else state.login(UserRole.user);
+    }
   });
 
   runApp(NestPetApp(state: state));

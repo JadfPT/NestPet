@@ -68,7 +68,15 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (performLogin) {
-        targetPath = _role == UserRole.org ? '/o/home' : '/u/home';
+        // Prefer server-side role metadata when available, otherwise use chosen _role
+        final user = _auth.currentUser();
+        String chosen = 'user';
+        try {
+          final meta = user?.userMetadata;
+          if (meta != null && meta['role'] != null) chosen = meta['role'] as String;
+        } catch (_) {}
+        final finalRole = (chosen == 'org') ? UserRole.org : _role;
+        targetPath = finalRole == UserRole.org ? '/o/home' : '/u/home';
       }
     } catch (e) {
       snackMessage = e.toString();

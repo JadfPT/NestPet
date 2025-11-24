@@ -44,37 +44,98 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final items = repo.list(tipo: tipo, tamanho: tamanho, idadeMaxMeses: idadeMax);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Animais disponíveis'),
-        actions: [
-          IconButton(
-            tooltip: 'Filtros',
-            onPressed: _openFilters,
-            icon: const Icon(Icons.filter_list),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search bar (styled)
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1.6),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.9)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              decoration: InputDecoration.collapsed(
+                                hintText: 'Pesquisar',
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
+                              ),
+                              onChanged: (q) {
+                                // TODO: implement client-side search if desired
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // small avatar / logo on right
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            child: Image.asset('lib/assets/NestPet_logo.png', width: 20, height: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Title row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Animais disponíveis', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
+                  IconButton(
+                    onPressed: _openFilters,
+                    icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Content
+              Expanded(
+                child: items.isEmpty
+                    ? EmptyState(
+                        icon: Icons.search_off,
+                        title: 'Nenhum animal encontrado',
+                        message: 'Tenta ajustar os filtros ou volta a tentar mais tarde.',
+                        actionText: 'Limpar filtros',
+                        onAction: () => setState(() { tipo = null; tamanho = null; idadeMax = null; }),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 12),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1,
+                        ),
+                        itemCount: items.length,
+                        itemBuilder: (ctx, i) {
+                          final a = items[i];
+                          return AnimalGridCard(
+                            animal: a,
+                            onTap: () => context.push('/animal/${a.id}'),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      body: items.isEmpty
-          ? EmptyState(
-              icon: Icons.search_off,
-              title: 'Nenhum animal encontrado',
-              message: 'Tenta ajustar os filtros ou volta a tentar mais tarde.',
-              actionText: 'Limpar filtros',
-              onAction: () => setState(() { tipo = null; tamanho = null; idadeMax = null; }),
-            )
-          : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-              ),
-              itemCount: items.length,
-              itemBuilder: (_, i) => AnimalGridCard(
-                animal: items[i],
-                onTap: () => context.push('/animal/${items[i].id}'),
-              ),
-            ),
     );
   }
 }

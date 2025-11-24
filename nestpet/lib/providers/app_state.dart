@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/session_service.dart';
 import '../data/supabase_animal_repository.dart';
 import '../data/supabase_chat_repository.dart';
 import '../data/supabase_favorites_repository.dart';
@@ -25,10 +26,53 @@ class AppState extends ChangeNotifier {
       final list = await favs.getFavorites(userId);
       _favIds.addAll(list);
     }
+
+    // If Supabase has a restored session, derive role from server metadata
+    final supaUser = Supabase.instance.client.auth.currentUser;
+    if (supaUser != null) {
+      // prefer server-side metadata if present
+      try {
+        final meta = supaUser.userMetadata;
+        final serverRole = meta != null && meta['role'] != null ? meta['role'] as String? : null;
+        if (serverRole != null) {
+          role = serverRole == 'org' ? UserRole.org : UserRole.user;
+          notifyListeners();
+          return;
+        }
+      } catch (_) {
+        // ignore
+      }
+
+      // fallback to locally persisted role
+      final saved = await SessionService.loadRole();
+      if (saved != null) {
+        role = saved == 'org' ? UserRole.org : UserRole.user;
+        notifyListeners();
+        return;
+      }
+
+      // default to user role if nothing else indicates org
+      role = UserRole.user;
+      notifyListeners();
+    }
   }
 
-  void login(UserRole r) { role = r; notifyListeners(); }
-  void logout() { role = null; notifyListeners(); }
+  void login(UserRole r) {
+    role = r;
+    // persist role so it can be restored on app restart
+    SessionService.saveRole(r == UserRole.org ? 'org' : 'user');
+    notifyListeners();
+  }
+
+  void logout() {
+    // Sign out from Supabase (fire-and-forget) and clear persisted role
+    try {
+      Supabase.instance.client.auth.signOut().catchError((_) {});
+    } catch (_) {}
+    role = null;
+    SessionService.clearRole();
+    notifyListeners();
+  }
 
   // Favoritos (só user)
   List<Animal> favorites() {

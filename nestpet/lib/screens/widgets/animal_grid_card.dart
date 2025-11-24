@@ -22,6 +22,7 @@ class AnimalGridCard extends StatelessWidget {
     final app = context.watch<AppState>();
     final fav = app.isFav(animal.id);
     final first = animal.media.isNotEmpty ? animal.media.first : null;
+    final primary = Theme.of(context).colorScheme.primary;
 
     Widget media() {
       if (first == null) return const ColoredBox(color: Colors.black12);
@@ -38,21 +39,56 @@ class AnimalGridCard extends StatelessWidget {
         aspectRatio: 1,
         child: Stack(
           children: [
-            Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(12), child: media())),
+            // framed image
+            Positioned.fill(
+              child: Container(
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: primary, width: 2),
+                ),
+                child: ClipRRect(borderRadius: BorderRadius.circular(10), child: media()),
+              ),
+            ),
+
+            // favorite star top-right
             if (showFav && app.role == UserRole.user)
               Positioned(
-                right: 8, top: 8,
-                child: IconButton.filledTonal(
-                  icon: Icon(fav ? Icons.favorite : Icons.favorite_border),
-                  onPressed: () => app.toggleFav(animal.id),
+                right: 8,
+                top: 8,
+                child: GestureDetector(
+                  onTap: () => app.toggleFav(animal.id),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4)],
+                    ),
+                    child: Icon(
+                      fav ? Icons.star : Icons.star_border,
+                      color: fav ? Colors.amber : primary.withOpacity(0.85),
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
+
+            // name label bottom center
             Positioned(
-              left: 8, bottom: 8,
+              left: 8,
+              right: 8,
+              bottom: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                child: Text(animal.nome, style: const TextStyle(color: Colors.white)),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: primary.withOpacity(0.9)),
+                ),
+                child: Text(animal.nome, style: TextStyle(color: Colors.brown[900], fontWeight: FontWeight.w600)),
               ),
             ),
           ],

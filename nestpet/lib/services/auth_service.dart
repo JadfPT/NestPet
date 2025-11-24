@@ -8,6 +8,11 @@ class AuthService {
     return await _client.auth.signUp(email: email, password: password);
   }
 
+  // Note: updating server-side user metadata is not implemented here because
+  // the Supabase client API for updating user metadata varies across versions.
+  // Role persistence is handled locally via SessionService; server-side
+  // metadata can be added later when a stable API is chosen.
+
   // Iniciar sessão com email/password
   Future<AuthResponse> signInEmail(String email, String password) async {
     return await _client.auth.signInWithPassword(email: email, password: password);
