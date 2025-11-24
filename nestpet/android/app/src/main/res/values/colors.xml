@@ -2,4 +2,5 @@
 <resources>
     <!-- Background color for native splash to match the icon's beige square -->
     <color name="splash_background">#F2E8D7</color>
+	<color name="ic_launcher_background">#F2E8D7</color>
 </resources>

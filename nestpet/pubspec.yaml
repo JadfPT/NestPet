@@ -80,11 +80,13 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "lib/assets/NestPet_logo.png"
+  image_path: "lib/assets/NestPet_Icon.png"
+  adaptive_icon_background: "#F2E8D7"
+  adaptive_icon_foreground: "lib/assets/NestPet_Icon.png"
 
 flutter_native_splash:
   color: "#F2E8D7"
-  image: "lib/assets/NestPet_logo.png"
+  image: "lib/assets/NestPet_Icon.png"
   android: true
   ios: true
 
