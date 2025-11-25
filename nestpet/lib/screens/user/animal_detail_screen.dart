@@ -60,11 +60,11 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
         title: Text(animal.nome),
         actions: [
           if (!isOrg)
-            IconButton(
-              tooltip: isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
-              icon: Icon(isFav ? Icons.favorite : Icons.favorite_border),
-              onPressed: () => app.toggleFav(animal.id),
-            ),
+                IconButton(
+                  tooltip: isFav ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+                  icon: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: isFav ? const Color(0xFF824822) : null),
+                  onPressed: () => app.toggleFav(animal.id),
+                ),
           if (isOrg) ...[
             IconButton(
               tooltip: 'Editar',

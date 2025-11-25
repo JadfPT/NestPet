@@ -84,16 +84,28 @@ class AppState extends ChangeNotifier {
 
   Future<void> toggleFav(String id) async {
     if (role == UserRole.org) return;
+    // Toggle locally immediately so UI responds even without network/session
     final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-    if (_favIds.contains(id)) {
+    final removing = _favIds.contains(id);
+    if (removing) {
       _favIds.remove(id);
-      await favs.removeFavorite(userId, id);
     } else {
       _favIds.add(id);
-      await favs.addFavorite(userId, id);
     }
     notifyListeners();
+
+    // Persist to Supabase if we have a logged-in user. Fail silently on errors.
+    if (userId != null) {
+      try {
+        if (removing) {
+          await favs.removeFavorite(userId, id);
+        } else {
+          await favs.addFavorite(userId, id);
+        }
+      } catch (_) {
+        // ignore network errors for now
+      }
+    }
   }
 
   // CRUD

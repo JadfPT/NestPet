@@ -37,7 +37,7 @@ class AnimalCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(animal.nome, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(animal.nome, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF824822))),
                     Text('${animal.tipo} • ${animal.tamanho} • ${animal.sexo}'),
                     Text('${animal.idadeMeses} meses • ${animal.pesoKg} kg'),
                   ],

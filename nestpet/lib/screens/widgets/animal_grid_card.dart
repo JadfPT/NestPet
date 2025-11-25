@@ -68,7 +68,7 @@ class AnimalGridCard extends StatelessWidget {
                     ),
                     child: Icon(
                       fav ? Icons.star : Icons.star_border,
-                      color: fav ? Colors.amber : primary.withOpacity(0.85),
+                      color: fav ? const Color(0xFF824822) : primary.withOpacity(0.85),
                       size: 20,
                     ),
                   ),
@@ -88,7 +88,7 @@ class AnimalGridCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: primary.withOpacity(0.9)),
                 ),
-                child: Text(animal.nome, style: TextStyle(color: Colors.brown[900], fontWeight: FontWeight.w600)),
+                child: Text(animal.nome, style: TextStyle(color:Color(0xFF824822), fontWeight: FontWeight.w600)),
               ),
             ),
           ],
