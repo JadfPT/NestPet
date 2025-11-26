@@ -18,6 +18,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? tipo;
   String? tamanho;
   int? idadeMax;
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
 
   Future<void> _openFilters() async {
     final res = await showModalBottomSheet<Map<String, dynamic>>(
@@ -41,7 +43,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final repo = context.watch<AppState>().animals;
-    final items = repo.list(tipo: tipo, tamanho: tamanho, idadeMaxMeses: idadeMax);
+    final baseItems = repo.list(tipo: tipo, tamanho: tamanho, idadeMaxMeses: idadeMax);
+    final items = baseItems.where((a) {
+      if (_query.isEmpty) return true;
+      final q = _query.toLowerCase();
+      final name = a.nome.toLowerCase();
+      final desc = a.descricao.toLowerCase();
+      return name.contains(q) || desc.contains(q);
+    }).toList();
 
     return Scaffold(
       body: SafeArea(
@@ -66,17 +75,30 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.9)),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: TextField(
-                              decoration: InputDecoration.collapsed(
-                                hintText: 'Pesquisar',
-                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: InputDecoration.collapsed(
+                                  hintText: 'Pesquisar',
+                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
+                                ),
+                                onChanged: (q) {
+                                  setState(() {
+                                    _query = q.trim();
+                                  });
+                                },
                               ),
-                              onChanged: (q) {
-                                // TODO: implement client-side search if desired
-                              },
-                            ),
                           ),
                           const SizedBox(width: 8),
+                            if (_query.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _query = '';
+                                  });
+                                },
+                                child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                              ),
                           // small avatar / logo on right
                           CircleAvatar(
                             radius: 16,
@@ -137,5 +159,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
