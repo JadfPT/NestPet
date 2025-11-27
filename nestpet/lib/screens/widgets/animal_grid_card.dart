@@ -39,13 +39,14 @@ class AnimalGridCard extends StatelessWidget {
         aspectRatio: 1,
         child: Stack(
           children: [
-            // framed image
+            // framed image with subtle shadow
             Positioned.fill(
               child: Container(
-                margin: const EdgeInsets.all(4),
+                margin: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: primary, width: 2),
+                  border: Border.all(color: primary.withOpacity(0.9), width: 1.2),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: Offset(0, 3))],
                 ),
                 child: ClipRRect(borderRadius: BorderRadius.circular(10), child: media()),
               ),
@@ -54,41 +55,57 @@ class AnimalGridCard extends StatelessWidget {
             // favorite star top-right
             if (showFav && app.role == UserRole.user)
               Positioned(
-                right: 8,
-                top: 8,
+                right: 10,
+                top: 10,
                 child: GestureDetector(
                   onTap: () => app.toggleFav(animal.id),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4)],
-                    ),
-                    child: Icon(
-                      fav ? Icons.star : Icons.star_border,
-                      color: fav ? const Color(0xFF824822) : primary.withOpacity(0.85),
-                      size: 20,
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Center(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                        child: fav
+                            ? Icon(
+                                Icons.star,
+                                key: const ValueKey('fav_on'),
+                                color: Colors.amber.shade600,
+                                size: 26,
+                              )
+                            : Icon(
+                                Icons.star_border,
+                                key: const ValueKey('fav_off'),
+                                color: Colors.amber.shade600,
+                                size: 26,
+                              ),
+                      ),
                     ),
                   ),
                 ),
               ),
 
-            // name label bottom center
-            Positioned(
-              left: 8,
-              right: 8,
-              bottom: 8,
-              child: Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: primary.withOpacity(0.9)),
+            // subtle gradient overlay + label for readability
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                  constraints: const BoxConstraints(minHeight: 40),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: primary.withOpacity(0.9)),
+                  ),
+                  child: Text(
+                    animal.nome,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: primary, fontWeight: FontWeight.w700, fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                child: Text(animal.nome, style: TextStyle(color:Color(0xFF824822), fontWeight: FontWeight.w600)),
               ),
             ),
           ],

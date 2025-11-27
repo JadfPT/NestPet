@@ -59,9 +59,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search bar (styled)
+              // Search bar (styled) with filter button at left and app symbol on right
               Row(
                 children: [
+                  // Filter button on the left
+                  IconButton(
+                    onPressed: _openFilters,
+                    icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
+                    tooltip: 'Filtrar',
+                  ),
+                  // Search input container
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -75,37 +82,50 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.9)),
                           const SizedBox(width: 10),
                           Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                decoration: InputDecoration.collapsed(
-                                  hintText: 'Pesquisar',
-                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
-                                ),
-                                onChanged: (q) {
-                                  setState(() {
-                                    _query = q.trim();
-                                  });
-                                },
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration.collapsed(
+                                hintText: 'Pesquisar',
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
                               ),
+                              onChanged: (q) {
+                                setState(() {
+                                  _query = q.trim();
+                                });
+                              },
+                            ),
                           ),
                           const SizedBox(width: 8),
-                            if (_query.isNotEmpty)
-                              GestureDetector(
-                                onTap: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _query = '';
-                                  });
-                                },
-                                child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
-                              ),
-                          // small avatar / logo on right
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            child: Image.asset('lib/assets/NestPet_logo.png', width: 20, height: 20),
-                          ),
+                          if (_query.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _query = '';
+                                });
+                              },
+                              child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                            ),
                         ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // App symbol on the right (outside the search box)
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: Offset(0,2)),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(Icons.pets, color: Theme.of(context).colorScheme.onPrimary, size: 20),
                       ),
                     ),
                   ),
@@ -118,10 +138,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Animais disponíveis', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
-                  IconButton(
-                    onPressed: _openFilters,
-                    icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
-                  ),
+                  const SizedBox.shrink(),
                 ],
               ),
               const SizedBox(height: 8),
