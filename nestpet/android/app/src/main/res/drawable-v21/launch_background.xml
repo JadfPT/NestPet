@@ -4,8 +4,6 @@
         <bitmap android:gravity="fill" android:src="@drawable/background"/>
     </item>
     <item>
-        <inset android:insetLeft="40dp" android:insetRight="40dp" android:insetTop="80dp" android:insetBottom="80dp">
-            <bitmap android:gravity="center" android:src="@drawable/splash"/>
-        </inset>
+        <bitmap android:gravity="center" android:src="@drawable/splash"/>
     </item>
 </layer-list>

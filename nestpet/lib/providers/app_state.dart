@@ -61,6 +61,19 @@ class AppState extends ChangeNotifier {
     role = r;
     // persist role so it can be restored on app restart
     SessionService.saveRole(r == UserRole.org ? 'org' : 'user');
+
+    // refresh favorites from server for the logged-in user (background)
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      favs.getFavorites(userId).then((list) {
+        _favIds.clear();
+        _favIds.addAll(list);
+        notifyListeners();
+      }).catchError((_) {
+        // ignore errors refreshing favorites
+      });
+    }
+
     notifyListeners();
   }
 
