@@ -8,7 +8,7 @@ import 'providers/app_state.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_user_screen.dart';
-import 'screens/auth/register_org_screen.dart';
+import 'screens/auth/register_org_screen_fixed.dart';
 import 'screens/user/user_home_screen.dart';
 import 'screens/user/user_favorites_screen.dart';
 import 'screens/user/profile_screen.dart';
@@ -210,7 +210,7 @@ final router = GoRouter(
     GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
     GoRoute(path: '/register/user', builder: (_, __) => const RegisterUserScreen()),
-    GoRoute(path: '/register/org', builder: (_, __) => const RegisterOrgScreen()),
+    GoRoute(path: '/register/org', builder: (_, __) => const RegisterOrgScreenFixed()),
     GoRoute(path: '/messages', builder: (_, __) => const MessagesScreen()),
 
     // USER (shell)

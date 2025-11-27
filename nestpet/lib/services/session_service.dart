@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// the correct app shell after the app restarts.
 class SessionService {
   static const _roleKey = 'nestpet_role';
+  static const _orgNameKey = 'nestpet_org_name';
+  static const _orgNifKey = 'nestpet_org_nif';
 
   /// Save the role string ('user' or 'org')
   static Future<void> saveRole(String role) async {
@@ -15,6 +17,27 @@ class SessionService {
   static Future<void> clearRole() async {
     final sp = await SharedPreferences.getInstance();
     await sp.remove(_roleKey);
+  }
+
+  /// Save organization name + NIF temporarily so it can be synced to server
+  static Future<void> saveOrgInfo(String name, String nif) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString(_orgNameKey, name);
+    await sp.setString(_orgNifKey, nif);
+  }
+
+  static Future<Map<String, String?>> loadOrgInfo() async {
+    final sp = await SharedPreferences.getInstance();
+    return {
+      'name': sp.getString(_orgNameKey),
+      'nif': sp.getString(_orgNifKey),
+    };
+  }
+
+  static Future<void> clearOrgInfo() async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.remove(_orgNameKey);
+    await sp.remove(_orgNifKey);
   }
 
   /// Return the saved role, or null if none

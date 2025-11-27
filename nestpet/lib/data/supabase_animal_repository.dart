@@ -12,7 +12,31 @@ class SupabaseAnimalRepository {
 
   /// Refresh cache from Supabase and return list
   Future<List<Animal>> refresh() async {
-    final res = await _client.from('animals').select().order('created_at', ascending: false);
+    // Fetch user and prefer server-side metadata to decide which animals to load.
+    String? userId;
+    String? serverRole;
+    try {
+      final resp = await _client.auth.getUser();
+      userId = resp.user?.id;
+      final meta = resp.user?.userMetadata;
+      if (meta != null && meta['role'] != null) serverRole = meta['role'] as String?;
+    } catch (_) {
+      // fallback to currentUser if getUser fails
+      userId = _client.auth.currentUser?.id;
+      try {
+        final meta = _client.auth.currentUser?.userMetadata;
+        if (meta != null && meta['role'] != null) serverRole = meta['role'] as String?;
+      } catch (_) {}
+    }
+
+    late final dynamic res;
+    if (serverRole == 'org' && userId != null) {
+      // Organization: only load animals that belong to this org
+      res = await _client.from('animals').select().eq('org_id', userId).order('created_at', ascending: false);
+    } else {
+      // Regular users: only load published animals
+      res = await _client.from('animals').select().eq('is_published', true).order('created_at', ascending: false);
+    }
     // ignore: unnecessary_cast
     final list = (res as List).map((r) => _mapToAnimal(r as Map<String, dynamic>)).toList();
     _cache

@@ -2,12 +2,13 @@
 import 'package:flutter/material.dart';
 import '../../app_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_state.dart';
 import '../../services/auth_service.dart';
 
 bool _validateNIF(String nif) {
   // NIF (Portugal) validation: 9 digits, checksum on first 8 digits
-  if (!RegExp(r'^\d{9}4').hasMatch(nif)) return false;
+  if (!RegExp(r'^\d{9}$').hasMatch(nif)) return false;
   final digits = nif.split('').map(int.parse).toList();
   final weights = [9,8,7,6,5,4,3,2];
   var sum = 0;
@@ -70,12 +71,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (performLogin) {
         // Prefer server-side role metadata when available, otherwise use chosen _role
-        final user = _auth.currentUser();
+        // Force re-fetch of the user from Supabase to ensure any server-side
+        // metadata written by triggers/handlers is available.
+        User? sdkUser;
+        try {
+          final resp = await Supabase.instance.client.auth.getUser();
+          sdkUser = resp.user ?? _auth.currentUser();
+        } catch (_) {
+          sdkUser = _auth.currentUser();
+        }
+
         String chosen = 'user';
         try {
-          final meta = user?.userMetadata;
+          final meta = sdkUser?.userMetadata;
           if (meta != null && meta['role'] != null) chosen = meta['role'] as String;
         } catch (_) {}
+
         final finalRole = (chosen == 'org') ? UserRole.org : _role;
         targetPath = finalRole == UserRole.org ? '/o/home' : '/u/home';
       }
@@ -86,7 +97,27 @@ class _LoginScreenState extends State<LoginScreen> {
         if (snackMessage != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(snackMessage)));
         if (performLogin) {
           final app = context.read<AppState>();
-          app.login(_role);
+          // Login should use the resolved role (from server metadata if present)
+          try {
+            // Re-fetch user to ensure server-updated metadata is visible.
+            User? sdkUser;
+            try {
+              final resp = await Supabase.instance.client.auth.getUser();
+              sdkUser = resp.user ?? _auth.currentUser();
+            } catch (_) {
+              sdkUser = _auth.currentUser();
+            }
+
+            String chosen = 'user';
+            try {
+              final meta = sdkUser?.userMetadata;
+              if (meta != null && meta['role'] != null) chosen = meta['role'] as String;
+            } catch (_) {}
+            final finalRole = (chosen == 'org') ? UserRole.org : _role;
+            app.login(finalRole);
+          } catch (_) {
+            app.login(_role);
+          }
           router.go(targetPath!);
         }
         setState(() { _loading = false; });
