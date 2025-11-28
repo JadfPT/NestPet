@@ -274,23 +274,46 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     // Campos opcionais: só usa se existirem na classe Animal.
     bool? vacinado;
     String? expVida;
-    String? cor;
-    List<String>? personalidade;
+    List<String> personalidade = [];
 
     try {
       vacinado = (animal as dynamic).vacinado as bool?;
     } catch (_) {}
+
     try {
-      expVida = (animal as dynamic).expectativaVida as String?;
+      // suporte a diferentes nomes: expectativaVidaAnos, expectativaVida, life_expectancy_years
+      final ev = (animal as dynamic).expectativaVidaAnos ?? (animal as dynamic).expectativaVida ?? (animal as dynamic).life_expectancy_years;
+      if (ev != null) {
+        if (ev is int) expVida = '$ev anos';
+        else if (ev is String && ev.trim().isNotEmpty) {
+          final parsed = int.tryParse(ev);
+          expVida = parsed != null ? '$parsed anos' : ev;
+        }
+      }
     } catch (_) {}
+
+
+    try {
+      final dyn = (animal as dynamic).personalidade ?? (animal as dynamic).personality;
+      if (dyn != null) {
+        if (dyn is List) {
+          personalidade = dyn.map((e) => e.toString()).toList();
+        } else if (dyn is String && dyn.trim().isNotEmpty) {
+          personalidade = dyn
+              .split(RegExp(r'[;,\n]'))
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+      }
+    } catch (_) {}
+    String? cor;
+    String? caracteristicas;
     try {
       cor = (animal as dynamic).cor as String?;
     } catch (_) {}
     try {
-      final dynList = (animal as dynamic).personalidade;
-      if (dynList is List) {
-        personalidade = dynList.map((e) => e.toString()).toList();
-      }
+      caracteristicas = (animal as dynamic).caracteristicas as String?;
     } catch (_) {}
 
     return Card(
@@ -359,19 +382,23 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'Características:',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: accent,
+            if (caracteristicas != null && caracteristicas.trim().isNotEmpty) ...[
+              Text(
+                'Características:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: accent,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
+              const SizedBox(height: 4),
+              Text(caracteristicas, style: const TextStyle(color: Colors.black87)),
+              const SizedBox(height: 6),
+            ],
             _infoLine('Cor', cor ?? '—', accent),
             const SizedBox(height: 4),
-            if (personalidade != null && personalidade!.isNotEmpty) ...[
+            if (personalidade.isNotEmpty) ...[
               const SizedBox(height: 2),
-              _personalityBlock(personalidade!, accent),
+              _personalityBlock(personalidade, accent),
             ] else
               _infoLine('Personalidade', '—', accent),
           ],

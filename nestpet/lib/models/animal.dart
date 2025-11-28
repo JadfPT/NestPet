@@ -23,6 +23,11 @@ class Animal {
   double pesoKg;
   String tamanho;
   String descricao;
+  String personalidade;
+  int expectativaVidaAnos;
+  bool vacinado;
+  String caracteristicas;
+  String cor;
   List<MediaItem> media;
 
   Animal({
@@ -34,6 +39,11 @@ class Animal {
     required this.pesoKg,
     required this.tamanho,
     required this.descricao,
+    this.personalidade = '',
+    this.expectativaVidaAnos = 0,
+    this.vacinado = false,
+    this.caracteristicas = '',
+    this.cor = '',
     required this.media,
   });
 
@@ -46,6 +56,13 @@ class Animal {
         pesoKg: (j['pesoKg'] ?? 0.0) is double ? (j['pesoKg'] ?? 0.0) as double : double.tryParse((j['pesoKg'] ?? '0').toString()) ?? 0.0,
         tamanho: j['tamanho'] ?? 'médio',
         descricao: j['descricao'] ?? j['description'] ?? '',
+        personalidade: j['personality'] ?? j['personalidade'] ?? '',
+        expectativaVidaAnos: (j['life_expectancy_years'] ?? j['expectativaVidaAnos'] ?? 0) is int
+            ? (j['life_expectancy_years'] ?? j['expectativaVidaAnos'] ?? 0) as int
+            : int.tryParse((j['life_expectancy_years'] ?? j['expectativaVidaAnos'] ?? '0').toString()) ?? 0,
+        vacinado: (j['vaccinated'] ?? j['vacinado'] ?? false) is bool ? (j['vaccinated'] ?? j['vacinado'] ?? false) as bool : (j['vaccinated'] ?? j['vacinado'] ?? 'false').toString().toLowerCase() == 'true',
+        caracteristicas: j['characteristics'] ?? j['caracteristicas'] ?? '',
+        cor: j['color'] ?? j['cor'] ?? '',
         media: (j['media'] ?? []).map<MediaItem>((m) {
           if (m is MediaItem) return m;
           if (m is String) return MediaItem(path: m, type: m.endsWith('.mp4') ? 'video' : 'image');
@@ -62,7 +79,12 @@ class Animal {
         'idadeMeses': idadeMeses,
         'pesoKg': pesoKg,
         'tamanho': tamanho,
-        'descricao': descricao,
-        'media': media.map((m) => m.toJson()).toList(),
+      'descricao': descricao,
+      'personality': personalidade,
+      'life_expectancy_years': expectativaVidaAnos,
+      'vaccinated': vacinado,
+      'characteristics': caracteristicas,
+      'color': cor,
+      'media': media.map((m) => m.toJson()).toList(),
       };
 }

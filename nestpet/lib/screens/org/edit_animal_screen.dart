@@ -125,6 +125,25 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             TextFormField(initialValue: a.pesoKg.toStringAsFixed(1), decoration: const InputDecoration(labelText: 'Peso (kg)'), keyboardType: TextInputType.number, onSaved: (v)=> a.pesoKg=double.tryParse(v??'${a.pesoKg}')??a.pesoKg),
             TextFormField(initialValue: a.descricao, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3, onSaved: (v)=> a.descricao=v?.trim()??a.descricao),
             const SizedBox(height: 12),
+            TextFormField(initialValue: a.personalidade, decoration: const InputDecoration(labelText: 'Personalidade'), onSaved: (v)=> a.personalidade=v?.trim()??a.personalidade),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Expectativa de vida (anos): ${a.expectativaVidaAnos}'),
+                  Slider(value: a.expectativaVidaAnos.toDouble(), min: 0, max: 30, divisions: 30, onChanged: (v)=> setState(()=> a.expectativaVidaAnos = v.round())),
+                ])),
+                const SizedBox(width: 8),
+                Column(children: [
+                  const Text('Vacinado'),
+                  Checkbox(value: a.vacinado, onChanged: (v)=> setState(()=> a.vacinado = v ?? false)),
+                ]),
+              ],
+            ),
+            TextFormField(initialValue: a.caracteristicas, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2, onSaved: (v)=> a.caracteristicas=v?.trim()??a.caracteristicas),
+            const SizedBox(height: 8),
+            TextFormField(initialValue: a.cor, decoration: const InputDecoration(labelText: 'Cor'), onSaved: (v)=> a.cor=v?.trim()??a.cor),
+            const SizedBox(height: 12),
             Row(
               children: [
                 FilledButton.icon(onPressed: a.media.length>=10?null:_pickMedia, icon: const Icon(Icons.add_photo_alternate), label: Text('Adicionar media (${a.media.length}/10)')),
@@ -159,9 +178,16 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             FilledButton(
               onPressed: () async {
                 form.currentState?.save();
-                await context.read<AppState>().updateAnimal(a);
-                if (!context.mounted) return;
-                router.go('/o/home');
+                try {
+                  await context.read<AppState>().updateAnimal(a);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Guardado com sucesso')));
+                  router.go('/o/home');
+                } catch (e) {
+                  // ignore: avoid_print
+                  print('updateAnimal failed: $e');
+                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao guardar: ${e.toString()}')));
+                }
               },
               child: const Text('Guardar'),
             ),

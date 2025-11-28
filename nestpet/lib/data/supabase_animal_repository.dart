@@ -84,11 +84,26 @@ class SupabaseAnimalRepository {
       'id': a.id,
       'org_id': userId,
       'name': a.nome,
+      'type': a.tipo,
+      'sex': a.sexo,
+      'age_months': a.idadeMeses,
+      'weight_kg': a.pesoKg,
+      'tamanho': a.tamanho,
+      'personality': a.personalidade,
+      'life_expectancy_years': a.expectativaVidaAnos,
+      'vaccinated': a.vacinado,
+      'characteristics': a.caracteristicas,
+      'color': a.cor,
       'description': a.descricao,
       'image_path': jsonEncode(a.media.map((m) => m.path).toList()),
       'is_published': true,
     };
-    await _client.from('animals').insert(data);
+    // debug: log payload and request result
+    // ignore: avoid_print
+    print('SupabaseAnimalRepository.add: inserting data: ' + data.toString());
+    final inserted = await _client.from('animals').insert(data).select().maybeSingle();
+    // ignore: avoid_print
+    print('SupabaseAnimalRepository.add: insert result: ' + inserted.toString());
     _cache.insert(0, a);
     return a;
   }
@@ -96,11 +111,26 @@ class SupabaseAnimalRepository {
   Future<void> updateAnimal(Animal a) async {
     final data = {
       'name': a.nome,
+      'type': a.tipo,
+      'sex': a.sexo,
+      'age_months': a.idadeMeses,
+      'weight_kg': a.pesoKg,
+      'tamanho': a.tamanho,
+      'personality': a.personalidade,
+      'life_expectancy_years': a.expectativaVidaAnos,
+      'vaccinated': a.vacinado,
+      'characteristics': a.caracteristicas,
+      'color': a.cor,
       'description': a.descricao,
       'image_path': jsonEncode(a.media.map((m) => m.path).toList()),
       'is_published': true,
     };
-    await _client.from('animals').update(data).eq('id', a.id);
+    // debug: log payload and update result
+    // ignore: avoid_print
+    print('SupabaseAnimalRepository.updateAnimal: updating id=${a.id} data=${data.toString()}');
+    final updated = await _client.from('animals').update(data).eq('id', a.id).select().maybeSingle();
+    // ignore: avoid_print
+    print('SupabaseAnimalRepository.updateAnimal: update result: ' + updated.toString());
     final idx = _cache.indexWhere((x) => x.id == a.id);
     if (idx != -1) _cache[idx] = a;
   }
@@ -123,12 +153,25 @@ class SupabaseAnimalRepository {
     return Animal(
       id: r['id'].toString(),
       nome: r['name'] ?? '',
-      tipo: r['type'] ?? 'Cão',
-      sexo: r['sex'] ?? 'M',
-      idadeMeses: 0,
-      pesoKg: 0.0,
-      tamanho: 'médio',
-      descricao: r['description'] ?? '',
+      tipo: r['type'] ?? r['tipo'] ?? 'Cão',
+      sexo: r['sex'] ?? r['sexo'] ?? 'M',
+      idadeMeses: (r['age_months'] ?? r['idadeMeses'] ?? 0) is int
+          ? (r['age_months'] ?? r['idadeMeses'] ?? 0) as int
+          : int.tryParse((r['age_months'] ?? r['idadeMeses'] ?? '0').toString()) ?? 0,
+      pesoKg: (r['weight_kg'] ?? r['pesoKg'] ?? 0.0) is double
+          ? (r['weight_kg'] ?? r['pesoKg'] ?? 0.0) as double
+          : double.tryParse((r['weight_kg'] ?? r['pesoKg'] ?? '0').toString()) ?? 0.0,
+      tamanho: r['tamanho'] ?? r['size'] ?? 'médio',
+      descricao: r['description'] ?? r['descricao'] ?? '',
+      personalidade: r['personality'] ?? r['personalidade'] ?? '',
+      expectativaVidaAnos: (r['life_expectancy_years'] ?? r['expectativaVidaAnos'] ?? 0) is int
+        ? (r['life_expectancy_years'] ?? r['expectativaVidaAnos'] ?? 0) as int
+        : int.tryParse((r['life_expectancy_years'] ?? r['expectativaVidaAnos'] ?? '0').toString()) ?? 0,
+      vacinado: (r['vaccinated'] ?? r['vacinado'] ?? false) is bool
+        ? (r['vaccinated'] ?? r['vacinado'] ?? false) as bool
+        : (r['vaccinated'] ?? r['vacinado'] ?? 'false').toString().toLowerCase() == 'true',
+      caracteristicas: r['characteristics'] ?? r['caracteristicas'] ?? '',
+      cor: r['color'] ?? r['cor'] ?? '',
       media: media,
     );
   }

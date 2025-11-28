@@ -27,6 +27,11 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   double peso = 5;
   String tamanho = 'médio';
   String descricao = '';
+  String personalidade = '';
+  int expectativaVidaAnos = 0;
+  bool vacinado = false;
+  String caracteristicas = '';
+  String cor = '';
   final List<MediaItem> media = [];
   final String _animalId = const Uuid().v4();
   final _storage = StorageRepository();
@@ -91,7 +96,9 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     final a = Animal(
       id: const Uuid().v4(),
       nome: nome, tipo: tipo, sexo: sexo, idadeMeses: idade,
-      pesoKg: peso, tamanho: tamanho, descricao: descricao, media: media,
+      pesoKg: peso, tamanho: tamanho, descricao: descricao,
+      personalidade: personalidade, expectativaVidaAnos: expectativaVidaAnos, vacinado: vacinado,
+      caracteristicas: caracteristicas, cor: cor, media: media,
     );
     await app.addAnimal(a);               // <-- notifica a UI
     if (!context.mounted) return;
@@ -140,6 +147,25 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
               Text('Peso (kg): ${peso.toStringAsFixed(1)}'),
               Slider(value: peso, min: 0.5, max: 60, divisions: 119, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
               TextFormField(decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3, onSaved: (v)=> descricao=v?.trim()??''),
+              const SizedBox(height: 12),
+              TextFormField(decoration: const InputDecoration(labelText: 'Personalidade'), onSaved: (v)=> personalidade=v?.trim()??''),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Expectativa de vida (anos): $expectativaVidaAnos'),
+                    Slider(value: expectativaVidaAnos.toDouble(), min: 0, max: 30, divisions: 30, onChanged: (v)=> setState(()=> expectativaVidaAnos=v.round())),
+                  ])),
+                  const SizedBox(width: 8),
+                  Column(children: [
+                    const Text('Vacinado'),
+                    Checkbox(value: vacinado, onChanged: (v)=> setState(()=> vacinado = v ?? false)),
+                  ]),
+                ],
+              ),
+              TextFormField(decoration: const InputDecoration(labelText: 'Características'), maxLines: 2, onSaved: (v)=> caracteristicas=v?.trim()??''),
+              const SizedBox(height: 8),
+              TextFormField(decoration: const InputDecoration(labelText: 'Cor'), onSaved: (v)=> cor=v?.trim()??''),
               const SizedBox(height: 12),
 
               Row(
