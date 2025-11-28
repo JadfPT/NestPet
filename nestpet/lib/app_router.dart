@@ -208,14 +208,14 @@ final router = GoRouter(
       builder: (ctx, st) => AnimalDetailScreen(id: st.pathParameters['id']!),
     ),
     GoRoute(
-      path: '/chat/:id',
+      path: '/chat/:animalId/:userId',
       parentNavigatorKey: _rootKey,
-      builder: (ctx, st) => UserChatScreen(animalId: st.pathParameters['id']!),
+      builder: (ctx, st) => UserChatScreen(animalId: st.pathParameters['animalId']!, userId: st.pathParameters['userId']),
     ),
     GoRoute(
-      path: '/org/chat/:id',
+      path: '/org/chat/:animalId/:userId',
       parentNavigatorKey: _rootKey,
-      builder: (ctx, st) => OrgChatScreen(animalId: st.pathParameters['id']!),
+      builder: (ctx, st) => OrgChatScreen(animalId: st.pathParameters['animalId']!, userId: st.pathParameters['userId']!),
     ),
   ],
   redirect: (ctx, st) {

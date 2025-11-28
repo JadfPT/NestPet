@@ -10,7 +10,8 @@ import '../../models/message.dart';
 
 class OrgChatScreen extends StatefulWidget {
   final String animalId; // conversa referente a um animal
-  const OrgChatScreen({super.key, required this.animalId});
+  final String userId; // human user id participating in the conversation
+  const OrgChatScreen({super.key, required this.animalId, required this.userId});
 
   @override
   State<OrgChatScreen> createState() => _OrgChatScreenState();
@@ -20,6 +21,10 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
   final ctrl = TextEditingController();
   final List<Message> _messages = [];
   StreamSubscription<Map<String, dynamic>>? _sub;
+  final ScrollController _scrollCtrl = ScrollController();
+  StreamSubscription<Map<String, dynamic>>? _typingSub;
+  bool _userTyping = false;
+  Timer? _typingTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +46,7 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollCtrl,
               padding: const EdgeInsets.all(12),
               itemCount: msgs.length,
               itemBuilder: (_, i) {
@@ -57,7 +63,30 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(m.text),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(child: Text(m.text)),
+                            const SizedBox(width: 8),
+                            if (m.from == 'org')
+                              Icon(
+                                m.isRead ? Icons.done_all : Icons.check,
+                                size: 14,
+                                color: m.isRead ? Colors.blueAccent : Colors.grey,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -71,7 +100,18 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
                   child: TextField(
                     controller: ctrl,
                     decoration: const InputDecoration(hintText: 'Responder...'),
-                    onSubmitted: (_) => _send(context),
+                            onSubmitted: (_) => _send(context),
+                            onChanged: (s) {
+                              // report typing for the human participant so the user's UI shows the org typing
+                              // write typing_status using the human participant id (widget.userId)
+                              if (widget.userId.isNotEmpty) {
+                                context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, true);
+                                _typingTimer?.cancel();
+                                _typingTimer = Timer(const Duration(seconds: 2), () {
+                                  context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, false);
+                                });
+                              }
+                            },
                   ),
                 ),
                 IconButton(
@@ -80,7 +120,15 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
                 ),
               ],
             ),
-          )
+          ),
+          if (_userTyping)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('O utilizador está a escrever...', style: Theme.of(context).textTheme.bodySmall),
+              ),
+            ),
         ],
       ),
     );
@@ -95,25 +143,58 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMessages();
-    _sub = context.read<AppState>().chat.subscribeNewMessages(widget.animalId).listen((map) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+  }
+
+  Future<void> _init() async {
+    await _loadMessages();
+    // lastSeen based on latest loaded message
+    DateTime? lastSeen;
+    if (_messages.isNotEmpty) {
+      lastSeen = _messages.last.sentAt.toUtc();
+    } else {
+      // request full history when no local messages present
+      lastSeen = null;
+    }
+
+    _sub = context.read<AppState>().chat.subscribeNewMessages(widget.animalId, userId: widget.userId, lastSeen: lastSeen).listen((map) {
       final m = _mapToMessage(map);
-      setState(() {
-        _messages.add(m);
+      _addOrUpdateMessage(m);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          if (_scrollCtrl.hasClients) {
+            _scrollCtrl.animateTo(_scrollCtrl.position.maxScrollExtent, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+          }
+        } catch (_) {}
       });
+      // when org views messages, mark them read
+      context.read<AppState>().chat.markConversationRead(widget.animalId, widget.userId);
+    });
+
+    // subscribe to typing events from the human user so org sees when user is typing
+    _typingSub = context.read<AppState>().chat.subscribeTypingEvents(widget.animalId, widget.userId).listen((map) {
+      try {
+        final isTyping = (map['is_typing'] ?? false) as bool;
+        setState(() {
+          _userTyping = isTyping;
+        });
+      } catch (_) {}
     });
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _typingSub?.cancel();
+    _typingTimer?.cancel();
+    _scrollCtrl.dispose();
     ctrl.dispose();
     super.dispose();
   }
 
   Future<void> _loadMessages() async {
     try {
-      final rows = await context.read<AppState>().chat.fetchMessages(widget.animalId);
+      final rows = await context.read<AppState>().chat.fetchMessages(widget.animalId, userId: widget.userId);
       final list = rows.map((r) => _mapToMessage(r)).toList();
       if (!mounted) return;
       setState(() {
@@ -123,6 +204,22 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
     } catch (e) {
       setState(() {});
     }
+  }
+
+  void _addOrUpdateMessage(Message m) {
+    if (!mounted) return;
+    setState(() {
+      final idx = _messages.indexWhere((e) => e.id == m.id);
+      if (idx >= 0) {
+        _messages[idx] = m;
+      } else {
+        _messages.add(m);
+      }
+      _messages.sort((a, b) {
+        final c = a.sentAt.compareTo(b.sentAt);
+        return c != 0 ? c : a.id.compareTo(b.id);
+      });
+    });
   }
 
   Message _mapToMessage(Map<String, dynamic> r) {
@@ -137,7 +234,13 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
     }
     final text = (r['content'] ?? '').toString();
     final sentAt = r['created_at'] != null ? DateTime.parse(r['created_at'].toString()) : DateTime.now();
-    return Message(id: id, from: from, text: text, sentAt: sentAt);
+    DateTime? readAt;
+    if (r['read_at'] != null) {
+      try {
+        readAt = DateTime.parse(r['read_at'].toString());
+      } catch (_) {}
+    }
+    return Message(id: id, from: from, text: text, sentAt: sentAt, readAt: readAt);
   }
 
   Future<void> _sendMessage() async {
@@ -146,11 +249,10 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     final userId = user?.id;
     try {
-      await context.read<AppState>().chat.send(widget.animalId, userId ?? 'org', text);
+      // when org sends, pass human participant id via `humanUserId` and set fromRole to 'org'
+      await context.read<AppState>().chat.send(widget.animalId, userId ?? 'org', text, humanUserId: widget.userId, fromRole: 'org');
       ctrl.clear();
-      setState(() {
-        _messages.add(Message(id: DateTime.now().millisecondsSinceEpoch.toString(), from: userId ?? 'org', text: text, sentAt: DateTime.now()));
-      });
+      // rely on subscription to append the server-saved message
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao enviar mensagem')));

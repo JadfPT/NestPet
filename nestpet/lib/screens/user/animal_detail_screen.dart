@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../providers/app_state.dart';
 import '../../models/animal.dart';
@@ -250,7 +251,11 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                 ),
                 elevation: 2,
               ),
-              onPressed: () => context.push('/chat/${animal.id}'),
+              onPressed: () {
+                final user = Supabase.instance.client.auth.currentUser;
+                final userId = user?.id ?? '';
+                context.push('/chat/${animal.id}/$userId');
+              },
               child: const Text(
                 'Contactar instituição',
                 style: TextStyle(fontSize: 16),
