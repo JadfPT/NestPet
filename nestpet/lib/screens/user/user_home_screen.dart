@@ -20,6 +20,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   int? idadeMax;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  OverlayEntry? _fabOverlay;
 
   Future<void> _openFilters() async {
     final res = await showModalBottomSheet<Map<String, dynamic>>(
@@ -179,7 +180,53 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _insertFabOverlay();
+    });
+  }
+
+  void _insertFabOverlay() {
+    if (_fabOverlay != null) return;
+    final overlay = Overlay.of(context);
+
+    _fabOverlay = OverlayEntry(builder: (ctx) {
+      final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+      final primary = Theme.of(context).colorScheme.primary;
+      const pillHeight = 58.0;
+      const fabSize = 56.0;
+
+      // small adjustable offset to tweak how far above the pill the FAB sits
+      const fabVerticalAdjustment = -115; // negative -> moves FAB lower on screen
+
+      return Positioned(
+        right: 28,
+        bottom: bottomInset + pillHeight + 12 + fabVerticalAdjustment,
+        child: Material(
+          color: Colors.transparent,
+          child: GestureDetector(
+            onTap: () => context.go('/messages'),
+            child: Container(
+              width: fabSize,
+              height: fabSize,
+              decoration: BoxDecoration(
+                color: primary,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+            ),
+          ),
+        ),
+      );
+    });
+
+    overlay.insert(_fabOverlay!);
+  }
+
+  @override
   void dispose() {
+    _fabOverlay?.remove();
     _searchController.dispose();
     super.dispose();
   }

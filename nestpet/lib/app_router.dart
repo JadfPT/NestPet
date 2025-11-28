@@ -32,29 +32,28 @@ class _UserShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     const pillHeight = 58.0;
-    const fabSize = 56.0;
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
       body: Stack(
         children: [
-          // leave space at bottom so content doesn't get hidden by the bar (including system inset)
-          Padding(padding: EdgeInsets.only(bottom: bottomInset + pillHeight + 12), child: child),
+          // leave space at bottom so content doesn't get hidden by the floating bar
+          Padding(padding: EdgeInsets.only(bottom: bottomInset + pillHeight + 20), child: child),
 
-          // bottom full-width bar extended to the absolute bottom (covers system inset)
+          // bottom floating pill placed above the system inset
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: bottomInset + 8,
+            left: 16,
+            right: 16,
             child: SizedBox(
-              height: pillHeight + bottomInset,
+              height: pillHeight,
               child: Container(
-                height: pillHeight + bottomInset,
+                height: pillHeight,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   color: primary,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8)],
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: Offset(0,6))],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -65,7 +64,7 @@ class _UserShell extends StatelessWidget {
                       color: Colors.white,
                     ),
 
-                    // center home inside the bar
+                    // center home inside the pill
                     GestureDetector(
                       onTap: () => context.go('/u/home'),
                       child: Container(
@@ -90,24 +89,7 @@ class _UserShell extends StatelessWidget {
             ),
           ),
 
-          // floating messages button positioned above the bar on the right (moved further right)
-          Positioned(
-            right: 20,
-            bottom: bottomInset + pillHeight - (fabSize / 2),
-            child: GestureDetector(
-              onTap: () => context.go('/messages'),
-              child: Container(
-                width: fabSize,
-                height: fabSize,
-                decoration: BoxDecoration(
-                  color: primary,
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
-                ),
-                child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-              ),
-            ),
-          ),
+          // no FAB here anymore; home screens will insert an overlay FAB when needed
         ],
       ),
     );
@@ -122,28 +104,27 @@ class _OrgShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     const pillHeight = 58.0;
-    const fabSize = 56.0;
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return Scaffold(
       body: Stack(
         children: [
-          Padding(padding: EdgeInsets.only(bottom: bottomInset + pillHeight + 12), child: child),
+          Padding(padding: EdgeInsets.only(bottom: bottomInset + pillHeight + 20), child: child),
 
-          // Org: full-width bottom bar extended to bottom
+          // floating pill for org shell above system inset
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: bottomInset + 8,
+            left: 16,
+            right: 16,
             child: SizedBox(
-              height: pillHeight + bottomInset,
+              height: pillHeight,
               child: Container(
-                height: pillHeight + bottomInset,
+                height: pillHeight,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
                   color: primary,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8)],
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: Offset(0,6))],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,23 +156,7 @@ class _OrgShell extends StatelessWidget {
             ),
           ),
 
-          Positioned(
-            right: 20,
-            bottom: bottomInset + pillHeight - (fabSize / 2),
-            child: GestureDetector(
-              onTap: () => context.go('/messages'),
-              child: Container(
-                width: fabSize,
-                height: fabSize,
-                decoration: BoxDecoration(
-                  color: primary,
-                  shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
-                ),
-                child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-              ),
-            ),
-          ),
+          // no FAB here anymore; home screens will insert an overlay FAB when needed
         ],
       ),
     );
