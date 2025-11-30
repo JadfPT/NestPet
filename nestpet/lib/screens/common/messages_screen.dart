@@ -108,33 +108,87 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const bg = Color(0xFFF2E8D7);
+    const brand = Color(0xFF824822);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Mensagens')),
+      backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: brand,
+        foregroundColor: bg,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            final role = context.read<AppState>().role;
+            if (role == UserRole.org) {
+              context.go('/o/home');
+            } else {
+              context.go('/u/home');
+            }
+          },
+        ),
+        title: const Text('Chat', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFF2E8D7))),
+      ),
       body: _loading
-        ? const Center(child: CircularProgressIndicator())
-        : _list.isEmpty
-          ? const Center(child: Text('Sem conversas ainda'))
-          : ListView.separated(
-              itemCount: _list.length,
-              separatorBuilder: (_,__) => const Divider(height: 1),
-              itemBuilder: (ctx, i) {
-                final c = _list[i];
-                return ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(c.animalName),
-                  subtitle: Text(c.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: Text(TimeOfDay.fromDateTime(c.lastAt).format(context)),
-                  onTap: () {
-                    final role = context.read<AppState>().role;
-                    if (role == UserRole.org) {
-                      context.push('/org/chat/${c.animalId}/${c.userId}');
-                    } else {
-                      context.push('/chat/${c.animalId}/${c.userId}');
-                    }
+          ? const Center(child: CircularProgressIndicator())
+          : _list.isEmpty
+              ? const Center(child: Text('Sem conversas ainda'))
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemCount: _list.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (ctx, i) {
+                    final c = _list[i];
+                    return InkWell(
+                      onTap: () {
+                        final role = context.read<AppState>().role;
+                        if (role == UserRole.org) {
+                          context.push('/org/chat/${c.animalId}/${c.userId}');
+                        } else {
+                          context.push('/chat/${c.animalId}/${c.userId}');
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: brand,
+                                shape: BoxShape.circle,
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)],
+                              ),
+                              child: Center(child: Icon(Icons.person, color: bg)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(c.animalName, style: const TextStyle(color: Color(0xFF824822), fontWeight: FontWeight.w700, fontSize: 16)),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.done_all, size: 16, color: brand.withOpacity(0.9)),
+                                      const SizedBox(width: 6),
+                                      Expanded(child: Text(c.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54))),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(TimeOfDay.fromDateTime(c.lastAt).format(context), style: const TextStyle(color: Colors.black54)),
+                          ],
+                        ),
+                      ),
+                    );
                   },
-                );
-              },
-            ),
+                ),
     );
   }
 }

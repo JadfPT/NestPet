@@ -31,14 +31,22 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
     final animal = context.watch<AppState>().animals.byIdSync(widget.animalId);
     final msgs = _messages;
 
+    const bg = Color(0xFFF2E8D7);
+    const brand = Color(0xFF824822);
+
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
         title: Text('Chat • ${animal?.nome ?? "Animal"}'),
+        backgroundColor: brand,
+        foregroundColor: bg,
+        elevation: 0,
         actions: [
           IconButton(
             onPressed: () => context.go('/org'),
             icon: const Icon(Icons.list_alt),
             tooltip: 'Os seus animais',
+            color: Colors.white,
           ),
         ],
       ),
@@ -52,75 +60,97 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
               itemBuilder: (_, i) {
                 final m = msgs[i];
                 final isOrg = m.from == 'org';
+                // left = user (outlined light), right = org (filled brand)
+                final bubble = Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                  decoration: BoxDecoration(
+                    color: isOrg ? brand : bg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isOrg ? null : Border.all(color: brand, width: 2),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        m.text,
+                        style: TextStyle(color: isOrg ? Colors.white : brand, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(color: isOrg ? Colors.white70 : brand.withOpacity(0.8), fontSize: 12),
+                          ),
+                          const SizedBox(width: 8),
+                          if (m.from == 'org')
+                            Icon(
+                              m.isRead ? Icons.done_all : Icons.check,
+                              size: 14,
+                              color: isOrg ? Colors.white70 : brand.withOpacity(0.8),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+
                 return Align(
                   alignment: isOrg ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                      color: isOrg
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(child: Text(m.text)),
-                            const SizedBox(width: 8),
-                            if (m.from == 'org')
-                              Icon(
-                                m.isRead ? Icons.done_all : Icons.check,
-                                size: 14,
-                                color: m.isRead ? Colors.blueAccent : Colors.grey,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: bubble,
                 );
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: ctrl,
-                    decoration: const InputDecoration(hintText: 'Responder...'),
-                            onSubmitted: (_) => _send(context),
-                            onChanged: (s) {
-                              // report typing for the human participant so the user's UI shows the org typing
-                              // write typing_status using the human participant id (widget.userId)
-                              if (widget.userId.isNotEmpty) {
-                                context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, true);
-                                _typingTimer?.cancel();
-                                _typingTimer = Timer(const Duration(seconds: 2), () {
-                                  context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, false);
-                                });
-                              }
-                            },
-                  ),
+
+          // input area above system nav bar
+          SafeArea(
+            bottom: true,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Container(
+                decoration: BoxDecoration(color: brand, borderRadius: BorderRadius.circular(28)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: ctrl,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration.collapsed(hintText: 'Responder...', hintStyle: TextStyle(color: Colors.white70)),
+                        onSubmitted: (_) => _send(context),
+                        onChanged: (s) {
+                          if (widget.userId.isNotEmpty) {
+                            context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, true);
+                            _typingTimer?.cancel();
+                            _typingTimer = Timer(const Duration(seconds: 2), () {
+                              context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, false);
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: IconButton(
+                        icon: const Icon(Icons.send_rounded),
+                        color: brand,
+                        onPressed: () => _send(context),
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () => _send(context),
-                ),
-              ],
+              ),
             ),
           ),
+
           if (_userTyping)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
