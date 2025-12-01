@@ -80,11 +80,13 @@ class SupabaseAnimalRepository {
 
   Future<Animal> add(Animal a) async {
     final userId = _client.auth.currentUser?.id;
+    // Normalize type for DB (avoid non-ascii enum values)
+    final dbType = (a.tipo ?? '').toString().replaceAll('ã', 'a').replaceAll('Ã', 'A');
     final data = {
       'id': a.id,
       'org_id': userId,
       'name': a.nome,
-      'type': a.tipo,
+      'type': dbType,
       'sex': a.sexo,
       'age_months': a.idadeMeses,
       'weight_kg': a.pesoKg,
@@ -109,9 +111,11 @@ class SupabaseAnimalRepository {
   }
 
   Future<void> updateAnimal(Animal a) async {
+    // Normalize type for DB
+    final dbType = (a.tipo ?? '').toString().replaceAll('ã', 'a').replaceAll('Ã', 'A');
     final data = {
       'name': a.nome,
-      'type': a.tipo,
+      'type': dbType,
       'sex': a.sexo,
       'age_months': a.idadeMeses,
       'weight_kg': a.pesoKg,
@@ -150,10 +154,14 @@ class SupabaseAnimalRepository {
       }
     } catch (_) {}
 
+    // Map DB type back to display value (e.g. 'Cao' -> 'Cão')
+    var tipoFromDb = (r['type'] ?? r['tipo'] ?? 'Cao').toString();
+    if (tipoFromDb.toLowerCase() == 'cao') tipoFromDb = 'Cão';
+
     return Animal(
       id: r['id'].toString(),
       nome: r['name'] ?? '',
-      tipo: r['type'] ?? r['tipo'] ?? 'Cão',
+      tipo: tipoFromDb,
       sexo: r['sex'] ?? r['sexo'] ?? 'M',
       idadeMeses: (r['age_months'] ?? r['idadeMeses'] ?? 0) is int
           ? (r['age_months'] ?? r['idadeMeses'] ?? 0) as int

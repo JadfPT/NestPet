@@ -98,19 +98,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             TextFormField(initialValue: a.nome, decoration: const InputDecoration(labelText: 'Nome'), onSaved: (v)=> a.nome=v?.trim()??a.nome),
-            Row(
-              children: [
-                Expanded(child: DropdownButtonFormField(initialValue: a.tipo, items: const [
-                  DropdownMenuItem(value: 'Cão', child: Text('Cão')),
-                  DropdownMenuItem(value: 'Gato', child: Text('Gato')),
-                ], onChanged: (v)=> setState(()=> a.tipo=v! ), decoration: const InputDecoration(labelText: 'Tipo'))),
-                const SizedBox(width: 12),
-                Expanded(child: DropdownButtonFormField(initialValue: a.sexo, items: const [
-                  DropdownMenuItem(value: 'M', child: Text('Macho')),
-                  DropdownMenuItem(value: 'F', child: Text('Fêmea')),
-                ], onChanged: (v)=> setState(()=> a.sexo=v! ), decoration: const InputDecoration(labelText: 'Sexo'))),
-              ],
-            ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(child: DropdownButtonFormField(initialValue: a.tamanho, items: const [

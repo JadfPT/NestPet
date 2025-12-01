@@ -32,9 +32,25 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   bool vacinado = false;
   String caracteristicas = '';
   String cor = '';
+  // controllers to preserve text across rebuilds
+  late final TextEditingController _nomeController;
+  late final TextEditingController _descricaoController;
+  late final TextEditingController _personalidadeController;
+  late final TextEditingController _caracteristicasController;
+  late final TextEditingController _corController;
   final List<MediaItem> media = [];
   final String _animalId = const Uuid().v4();
   final _storage = StorageRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _nomeController = TextEditingController(text: nome);
+    _descricaoController = TextEditingController(text: descricao);
+    _personalidadeController = TextEditingController(text: personalidade);
+    _caracteristicasController = TextEditingController(text: caracteristicas);
+    _corController = TextEditingController(text: cor);
+  }
 
   Future<void> _pickMedia() async {
     // Require authenticated user for uploads
@@ -87,7 +103,12 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   }
 
   Future<void> _save() async {
-    form.currentState?.save();
+    // read from controllers to build the model
+    nome = _nomeController.text.trim();
+    descricao = _descricaoController.text.trim();
+    personalidade = _personalidadeController.text.trim();
+    caracteristicas = _caracteristicasController.text.trim();
+    cor = _corController.text.trim();
     if (media.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adiciona pelo menos uma foto/vídeo.')));
       return;
@@ -119,9 +140,9 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
             children: [
               Row(
                 children: [
-                  Expanded(child: TextFormField(decoration: const InputDecoration(labelText: 'Nome'), onSaved: (v)=> nome=v?.trim()??'')),
+                  Expanded(child: TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome'))),
                   const SizedBox(width: 12),
-                  Expanded(child: DropdownButtonFormField(initialValue: tipo, items: const [
+                  Expanded(child: DropdownButtonFormField<String>(value: tipo, items: const [
                     DropdownMenuItem(value: 'Cão', child: Text('Cão')),
                     DropdownMenuItem(value: 'Gato', child: Text('Gato')),
                   ], onChanged: (v)=> setState(()=> tipo=v!), decoration: const InputDecoration(labelText: 'Tipo'))),
@@ -146,9 +167,9 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
               Slider(value: idade.toDouble(), min: 1, max: 120, divisions: 119, onChanged: (v)=> setState(()=> idade=v.round())),
               Text('Peso (kg): ${peso.toStringAsFixed(1)}'),
               Slider(value: peso, min: 0.5, max: 60, divisions: 119, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
-              TextFormField(decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3, onSaved: (v)=> descricao=v?.trim()??''),
+              TextFormField(controller: _descricaoController, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3),
               const SizedBox(height: 12),
-              TextFormField(decoration: const InputDecoration(labelText: 'Personalidade'), onSaved: (v)=> personalidade=v?.trim()??''),
+              TextFormField(controller: _personalidadeController, decoration: const InputDecoration(labelText: 'Personalidade')),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -163,9 +184,9 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   ]),
                 ],
               ),
-              TextFormField(decoration: const InputDecoration(labelText: 'Características'), maxLines: 2, onSaved: (v)=> caracteristicas=v?.trim()??''),
+              TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
               const SizedBox(height: 8),
-              TextFormField(decoration: const InputDecoration(labelText: 'Cor'), onSaved: (v)=> cor=v?.trim()??''),
+              TextFormField(controller: _corController, decoration: const InputDecoration(labelText: 'Cor')),
               const SizedBox(height: 12),
 
               Row(
@@ -212,5 +233,15 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _descricaoController.dispose();
+    _personalidadeController.dispose();
+    _caracteristicasController.dispose();
+    _corController.dispose();
+    super.dispose();
   }
 }
