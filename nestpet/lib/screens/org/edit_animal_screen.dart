@@ -61,6 +61,7 @@ class _EditColorChipsState extends State<_EditColorChips> {
 class _EditAnimalScreenState extends State<EditAnimalScreen> {
   final form = GlobalKey<FormState>();
   late Animal a;
+  bool _showColorChips = false;
 
   @override
   void initState() {
@@ -170,9 +171,23 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             TextFormField(initialValue: a.caracteristicas, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2, onSaved: (v)=> a.caracteristicas=v?.trim()??a.caracteristicas),
             const SizedBox(height: 8),
-            const Text('Cores'),
+            Row(
+              children: [
+                const Expanded(child: Text('Cores')),
+                IconButton(
+                  icon: Icon(_showColorChips ? Icons.expand_less : Icons.expand_more),
+                  onPressed: () => setState(() => _showColorChips = !_showColorChips),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
-            _EditColorChips(initialValue: a.cor, onChanged: (sel) { setState(() { a.cor = sel.join(','); }); }),
+            if (_showColorChips)
+              _EditColorChips(initialValue: a.cor, onChanged: (sel) { setState(() { a.cor = sel.join(','); }); })
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6.0),
+                child: Text(a.cor.trim().isEmpty ? 'Nenhuma selecionada' : 'Selecionadas: ${a.cor.split(',').where((s)=>s.trim().isNotEmpty).take(3).join(', ')}${a.cor.split(',').where((s)=>s.trim().isNotEmpty).length>3? ' +${a.cor.split(',').where((s)=>s.trim().isNotEmpty).length-3}':''}'),
+              ),
             const SizedBox(height: 12),
             Row(
               children: [

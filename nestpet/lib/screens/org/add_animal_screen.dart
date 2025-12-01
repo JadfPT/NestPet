@@ -33,6 +33,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   bool vacinado = false;
   String caracteristicas = '';
   String cor = '';
+  bool _showColorChips = false;
   // controllers to preserve text across rebuilds
   late final TextEditingController _nomeController;
   late final TextEditingController _descricaoController;
@@ -189,23 +190,40 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
               ),
               TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
               const SizedBox(height: 8),
-                          const Text('Cores'),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: kCommonColorTags.map((tag) {
-                              final selected = _selectedColors.contains(tag);
-                              return FilterChip(
-                                label: Text(tag),
-                                selected: selected,
-                                onSelected: (v) => setState(() {
-                                  if (v) _selectedColors.add(tag); else _selectedColors.remove(tag);
-                                }),
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Expanded(child: Text('Cores')),
+                  IconButton(
+                    icon: Icon(_showColorChips ? Icons.expand_less : Icons.expand_more),
+                    onPressed: () => setState(() => _showColorChips = !_showColorChips),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              if (_showColorChips)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: kCommonColorTags.map((tag) {
+                    final selected = _selectedColors.contains(tag);
+                    return FilterChip(
+                      label: Text(tag),
+                      selected: selected,
+                      onSelected: (v) => setState(() {
+                        if (v)
+                          _selectedColors.add(tag);
+                        else
+                          _selectedColors.remove(tag);
+                      }),
+                    );
+                  }).toList(),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                  child: Text(_selectedColors.isEmpty ? 'Nenhuma selecionada' : 'Selecionadas: ${_selectedColors.take(3).join(', ')}${_selectedColors.length>3? ' +${_selectedColors.length-3}':''}'),
+                ),
+              const SizedBox(height: 8),
               const SizedBox(height: 12),
 
               Row(
