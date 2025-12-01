@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../providers/app_state.dart';
 import '../../models/animal.dart';
+import '../../utils/color_tags.dart';
 
 class AnimalDetailScreen extends StatefulWidget {
   final String id;
@@ -399,7 +400,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
               Text(caracteristicas, style: const TextStyle(color: Colors.black87)),
               const SizedBox(height: 6),
             ],
-            _infoLine('Cor', cor ?? '—', accent),
+            if (cor == null || cor.trim().isEmpty)
+              _infoLine('Cor', '—', accent)
+            else
+              _colorTagsRow('Cor', cor, accent),
             const SizedBox(height: 4),
             if (personalidade.isNotEmpty) ...[
               const SizedBox(height: 2),
@@ -429,6 +433,49 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
             child: Text(
               value,
               style: const TextStyle(color: Colors.black87),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _colorTagsRow(String label, String? corCsv, Color accent) {
+    final tags = corCsv == null || corCsv.trim().isEmpty
+        ? <String>[]
+        : corCsv.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(fontWeight: FontWeight.w600, color: accent),
+          ),
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: tags.map((t) {
+                final c = colorForTag(t);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.black12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 12, height: 12, decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.black12))),
+                      const SizedBox(width: 8),
+                      Text(t),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],

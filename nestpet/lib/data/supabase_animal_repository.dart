@@ -81,7 +81,7 @@ class SupabaseAnimalRepository {
   Future<Animal> add(Animal a) async {
     final userId = _client.auth.currentUser?.id;
     // Normalize type for DB (avoid non-ascii enum values)
-    final dbType = (a.tipo ?? '').toString().replaceAll('ã', 'a').replaceAll('Ã', 'A');
+    final dbType = a.tipo.replaceAll('ã', 'a').replaceAll('Ã', 'A');
     final data = {
       'id': a.id,
       'org_id': userId,
@@ -112,7 +112,7 @@ class SupabaseAnimalRepository {
 
   Future<void> updateAnimal(Animal a) async {
     // Normalize type for DB
-    final dbType = (a.tipo ?? '').toString().replaceAll('ã', 'a').replaceAll('Ã', 'A');
+    final dbType = a.tipo.replaceAll('ã', 'a').replaceAll('Ã', 'A');
     final data = {
       'name': a.nome,
       'type': dbType,

@@ -9,6 +9,7 @@ import '../../data/animal_repository.dart';
 import '../../models/animal.dart';
 import '../../data/storage_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../utils/color_tags.dart';
 
 class EditAnimalScreen extends StatefulWidget {
   final String id;
@@ -16,6 +17,45 @@ class EditAnimalScreen extends StatefulWidget {
 
   @override
   State<EditAnimalScreen> createState() => _EditAnimalScreenState();
+}
+
+class _EditColorChips extends StatefulWidget {
+  final String? initialValue;
+  final ValueChanged<Set<String>>? onChanged;
+  const _EditColorChips({this.initialValue, this.onChanged});
+
+  @override
+  State<_EditColorChips> createState() => _EditColorChipsState();
+}
+
+class _EditColorChipsState extends State<_EditColorChips> {
+  late final Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final init = widget.initialValue ?? '';
+    _selected = init.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
+  }
+
+  void _toggle(String tag, bool value) {
+    setState(() {
+      if (value) _selected.add(tag); else _selected.remove(tag);
+    });
+    widget.onChanged?.call(_selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: kCommonColorTags.map((tag) {
+        final sel = _selected.contains(tag);
+        return FilterChip(label: Text(tag), selected: sel, onSelected: (v) => _toggle(tag, v));
+      }).toList(),
+    );
+  }
 }
 
 class _EditAnimalScreenState extends State<EditAnimalScreen> {
@@ -130,7 +170,9 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             TextFormField(initialValue: a.caracteristicas, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2, onSaved: (v)=> a.caracteristicas=v?.trim()??a.caracteristicas),
             const SizedBox(height: 8),
-            TextFormField(initialValue: a.cor, decoration: const InputDecoration(labelText: 'Cor'), onSaved: (v)=> a.cor=v?.trim()??a.cor),
+            const Text('Cores'),
+            const SizedBox(height: 6),
+            _EditColorChips(initialValue: a.cor, onChanged: (sel) { setState(() { a.cor = sel.join(','); }); }),
             const SizedBox(height: 12),
             Row(
               children: [

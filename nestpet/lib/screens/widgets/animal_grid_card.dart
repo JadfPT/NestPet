@@ -98,12 +98,19 @@ class AnimalGridCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: primary.withOpacity(0.9)),
                   ),
-                  child: Text(
-                    animal.nome,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: primary, fontWeight: FontWeight.w700, fontSize: 16),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          animal.nome,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: primary, fontWeight: FontWeight.w700, fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

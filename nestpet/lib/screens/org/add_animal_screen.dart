@@ -10,6 +10,7 @@ import '../../models/animal.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/storage_repository.dart';
+import '../../utils/color_tags.dart';
 
 
 class AddAnimalScreen extends StatefulWidget {
@@ -37,7 +38,8 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   late final TextEditingController _descricaoController;
   late final TextEditingController _personalidadeController;
   late final TextEditingController _caracteristicasController;
-  late final TextEditingController _corController;
+  // selected color tags
+  final Set<String> _selectedColors = {};
   final List<MediaItem> media = [];
   final String _animalId = const Uuid().v4();
   final _storage = StorageRepository();
@@ -49,7 +51,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     _descricaoController = TextEditingController(text: descricao);
     _personalidadeController = TextEditingController(text: personalidade);
     _caracteristicasController = TextEditingController(text: caracteristicas);
-    _corController = TextEditingController(text: cor);
+    // no text controller for colors; selection via chips
   }
 
   Future<void> _pickMedia() async {
@@ -108,7 +110,8 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     descricao = _descricaoController.text.trim();
     personalidade = _personalidadeController.text.trim();
     caracteristicas = _caracteristicasController.text.trim();
-    cor = _corController.text.trim();
+    // persist selected tags as comma-separated string
+    cor = _selectedColors.join(',');
     if (media.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adiciona pelo menos uma foto/vídeo.')));
       return;
@@ -186,7 +189,23 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
               ),
               TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
               const SizedBox(height: 8),
-              TextFormField(controller: _corController, decoration: const InputDecoration(labelText: 'Cor')),
+                          const Text('Cores'),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: kCommonColorTags.map((tag) {
+                              final selected = _selectedColors.contains(tag);
+                              return FilterChip(
+                                label: Text(tag),
+                                selected: selected,
+                                onSelected: (v) => setState(() {
+                                  if (v) _selectedColors.add(tag); else _selectedColors.remove(tag);
+                                }),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 8),
               const SizedBox(height: 12),
 
               Row(
@@ -241,7 +260,6 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     _descricaoController.dispose();
     _personalidadeController.dispose();
     _caracteristicasController.dispose();
-    _corController.dispose();
     super.dispose();
   }
 }

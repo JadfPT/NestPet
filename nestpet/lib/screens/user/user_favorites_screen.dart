@@ -11,7 +11,7 @@ class UserFavoritesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = context.watch<AppState>().favorites();
     return Scaffold(
-      appBar: AppBar(title: const Text('Favoritos')),
+      appBar: AppBar( title: Text('Favoritos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
       body: items.isEmpty
           ? const Center(child: Text('Sem favoritos por agora.'))
           : GridView.builder(
