@@ -21,6 +21,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   OverlayEntry? _fabOverlay;
+  double? _lastFabBottomInset;
 
   Future<void> _openFilters() async {
     final res = await showModalBottomSheet<Map<String, dynamic>>(
@@ -188,8 +189,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   void _insertFabOverlay() {
-    if (_fabOverlay != null) return;
     final overlay = Overlay.of(context);
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    if (_fabOverlay != null && _lastFabBottomInset == bottomInset) return;
+    _fabOverlay?.remove();
 
     _fabOverlay = OverlayEntry(builder: (ctx) {
       final bottomInset = MediaQuery.of(context).viewPadding.bottom;
@@ -222,6 +225,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     });
 
     overlay.insert(_fabOverlay!);
+    _lastFabBottomInset = bottomInset;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
   }
 
   @override

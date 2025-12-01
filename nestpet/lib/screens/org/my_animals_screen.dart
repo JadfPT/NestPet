@@ -17,6 +17,7 @@ class MyAnimalsScreen extends StatefulWidget {
 
 class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   OverlayEntry? _fabOverlay;
+  double? _lastFabBottomInset;
   // filter state
   String? tipo;
   String? tamanho;
@@ -71,8 +72,13 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   }
 
   void _insertFabOverlay() {
-    if (_fabOverlay != null) return;
     final overlay = Overlay.of(context);
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    // If inset didn't change and overlay exists, keep it
+    if (_fabOverlay != null && _lastFabBottomInset == bottomInset) return;
+
+    // If overlay exists but inset changed, remove it so we can recreate in new position
+    _fabOverlay?.remove();
 
     _fabOverlay = OverlayEntry(builder: (ctx) {
       final bottomInset = MediaQuery.of(context).viewPadding.bottom;
@@ -103,8 +109,15 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
         ),
       );
     });
-
     overlay.insert(_fabOverlay!);
+    _lastFabBottomInset = bottomInset;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-evaluate overlay position after dependencies change (e.g. system UI, insets, auth role)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
   }
 
   @override
