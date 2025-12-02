@@ -18,6 +18,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? tipo;
   String? tamanho;
   int? idadeMax;
+  String? sexo;
+  bool? vacinado;
+  String? cor;
+  int? pesoMin;
+  int? pesoMax;
+  String? caracteristicas;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   OverlayEntry? _fabOverlay;
@@ -31,6 +37,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         initialTipo: tipo,
         initialTamanho: tamanho,
         initialIdadeMax: idadeMax,
+        initialSexo: sexo,
+        initialVacinado: vacinado,
+        initialCor: cor,
+        initialPesoMin: pesoMin?.toDouble(),
+        initialPesoMax: pesoMax?.toDouble(),
+        initialCaracteristicas: caracteristicas,
       ),
     );
     if (res != null && mounted) {
@@ -38,6 +50,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         tipo = res['tipo'] as String?;
         tamanho = res['tamanho'] as String?;
         idadeMax = res['idade'] as int?;
+        sexo = res['sexo'] as String?;
+        vacinado = res['vacinado'] as bool?;
+        cor = res['cor'] as String?;
+        pesoMin = res['pesoMin'] as int?;
+        pesoMax = res['pesoMax'] as int?;
+        caracteristicas = res['caracteristicas'] as String?;
       });
     }
   }
@@ -47,11 +65,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     final repo = context.watch<AppState>().animals;
     final baseItems = repo.list(tipo: tipo, tamanho: tamanho, idadeMaxMeses: idadeMax);
     final items = baseItems.where((a) {
-      if (_query.isEmpty) return true;
-      final q = _query.toLowerCase();
-      final name = a.nome.toLowerCase();
-      final desc = a.descricao.toLowerCase();
-      return name.contains(q) || desc.contains(q);
+      // apply query
+      if (_query.isNotEmpty) {
+        final q = _query.toLowerCase();
+        final name = a.nome.toLowerCase();
+        final desc = a.descricao.toLowerCase();
+        if (!(name.contains(q) || desc.contains(q))) return false;
+      }
+      // sexo
+      if (sexo != null && sexo!.isNotEmpty && a.sexo != sexo) return false;
+      // vacinado
+      if (vacinado != null && a.vacinado != vacinado) return false;
+      // cor (contains, case-insensitive)
+      if (cor != null && cor!.isNotEmpty && !a.cor.toLowerCase().contains(cor!.toLowerCase())) return false;
+      // peso
+      if (pesoMin != null && a.pesoKg < pesoMin!) return false;
+      if (pesoMax != null && a.pesoKg > pesoMax!) return false;
+      // caracteristicas
+      if (caracteristicas != null && caracteristicas!.isNotEmpty) {
+        final k = caracteristicas!.toLowerCase();
+        final inNome = a.nome.toLowerCase().contains(k);
+        final inDesc = a.descricao.toLowerCase().contains(k);
+        final inCar = a.caracteristicas.toLowerCase().contains(k);
+        if (!(inNome || inDesc || inCar)) return false;
+      }
+      return true;
     }).toList();
 
     return Scaffold(
