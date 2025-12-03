@@ -30,33 +30,49 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   double? _lastFabBottomInset;
 
   Future<void> _openFilters() async {
-    final res = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => AnimalFiltersSheet(
-        initialTipo: tipo,
-        initialTamanho: tamanho,
-        initialIdadeMax: idadeMax,
-        initialSexo: sexo,
-        initialVacinado: vacinado,
-        initialCor: cor,
-        initialPesoMin: pesoMin?.toDouble(),
-        initialPesoMax: pesoMax?.toDouble(),
-        initialCaracteristicas: caracteristicas,
-      ),
-    );
-    if (res != null && mounted) {
-      setState(() {
-        tipo = res['tipo'] as String?;
-        tamanho = res['tamanho'] as String?;
-        idadeMax = res['idade'] as int?;
-        sexo = res['sexo'] as String?;
-        vacinado = res['vacinado'] as bool?;
-        cor = res['cor'] as String?;
-        pesoMin = res['pesoMin'] as int?;
-        pesoMax = res['pesoMax'] as int?;
-        caracteristicas = res['caracteristicas'] as String?;
-      });
+    // If a FAB overlay exists, remove it so the modal sheet can visually
+    // cover the bottom bar and message button. We re-insert the overlay
+    // after the sheet closes.
+    final hadOverlay = _fabOverlay != null;
+    if (hadOverlay) {
+      _fabOverlay?.remove();
+      _fabOverlay = null;
+    }
+
+    try {
+      final res = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => AnimalFiltersSheet(
+          initialTipo: tipo,
+          initialTamanho: tamanho,
+          initialIdadeMax: idadeMax,
+          initialSexo: sexo,
+          initialVacinado: vacinado,
+          initialCor: cor,
+          initialPesoMin: pesoMin?.toDouble(),
+          initialPesoMax: pesoMax?.toDouble(),
+          initialCaracteristicas: caracteristicas,
+        ),
+      );
+      if (res != null && mounted) {
+        setState(() {
+          tipo = res['tipo'] as String?;
+          tamanho = res['tamanho'] as String?;
+          idadeMax = res['idade'] as int?;
+          sexo = res['sexo'] as String?;
+          vacinado = res['vacinado'] as bool?;
+          cor = res['cor'] as String?;
+          pesoMin = res['pesoMin'] as int?;
+          pesoMax = res['pesoMax'] as int?;
+          caracteristicas = res['caracteristicas'] as String?;
+        });
+      }
+    } finally {
+      if (hadOverlay && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
+      }
     }
   }
 

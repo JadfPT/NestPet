@@ -127,38 +127,51 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   }
 
   Future<void> _openFilters() async {
-    final res = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => AnimalFiltersSheet(
-        initialTipo: tipo,
-        initialTamanho: tamanho,
-        initialIdadeMax: idadeMax,
-        initialSexo: sexo,
-        initialVacinado: vacinado,
-        initialCor: cor,
-        initialPesoMin: pesoMin?.toDouble(),
-        initialPesoMax: pesoMax?.toDouble(),
-        initialCaracteristicas: caracteristicas,
-      ),
-    );
-    if (res != null && mounted) {
-      setState(() {
-        tipo = res['tipo'] as String?;
-        tamanho = res['tamanho'] as String?;
-        idadeMax = res['idade'] as int?;
-        sexo = res['sexo'] as String?;
-        vacinado = res['vacinado'] as bool?;
-        cor = res['cor'] as String?;
-        pesoMin = res['pesoMin'] as int?;
-        pesoMax = res['pesoMax'] as int?;
-        caracteristicas = res['caracteristicas'] as String?;
-      });
-      // debug feedback
-      // ignore: avoid_print
-      print('MyAnimalsScreen: filtros aplicados: ' + res.toString());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Filtros aplicados')));
+    final hadOverlay = _fabOverlay != null;
+    if (hadOverlay) {
+      _fabOverlay?.remove();
+      _fabOverlay = null;
+    }
+
+    try {
+      final res = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => AnimalFiltersSheet(
+          initialTipo: tipo,
+          initialTamanho: tamanho,
+          initialIdadeMax: idadeMax,
+          initialSexo: sexo,
+          initialVacinado: vacinado,
+          initialCor: cor,
+          initialPesoMin: pesoMin?.toDouble(),
+          initialPesoMax: pesoMax?.toDouble(),
+          initialCaracteristicas: caracteristicas,
+        ),
+      );
+      if (res != null && mounted) {
+        setState(() {
+          tipo = res['tipo'] as String?;
+          tamanho = res['tamanho'] as String?;
+          idadeMax = res['idade'] as int?;
+          sexo = res['sexo'] as String?;
+          vacinado = res['vacinado'] as bool?;
+          cor = res['cor'] as String?;
+          pesoMin = res['pesoMin'] as int?;
+          pesoMax = res['pesoMax'] as int?;
+          caracteristicas = res['caracteristicas'] as String?;
+        });
+        // debug feedback
+        // ignore: avoid_print
+        print('MyAnimalsScreen: filtros aplicados: ' + res.toString());
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Filtros aplicados')));
+        }
+      }
+    } finally {
+      if (hadOverlay && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
       }
     }
   }
