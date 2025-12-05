@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/app_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/animal_grid_card.dart';
 import 'animal_filters_sheet.dart';
 import '../widgets/empty_state.dart';
@@ -167,23 +168,51 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // App symbol on the right (outside the search box)
+                  // App symbol on the right (outside the search box) — show user avatar if available
                   GestureDetector(
                     onTap: () {},
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: Offset(0,2)),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(Icons.pets, color: Theme.of(context).colorScheme.onPrimary, size: 20),
-                      ),
-                    ),
+                    child: Builder(builder: (ctx) {
+                      final user = Supabase.instance.client.auth.currentUser;
+                      final meta = user?.userMetadata;
+                      dynamic raw = meta != null ? meta['avatar_url'] : null;
+                      String? avatarUrl;
+                      if (raw is String && raw.isNotEmpty) avatarUrl = raw;
+                      if (raw is List && raw.isNotEmpty) {
+                        final first = raw.first;
+                        if (first is String && first.isNotEmpty) avatarUrl = first;
+                      }
+
+                      if (avatarUrl != null) {
+                        return Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: Offset(0,2))],
+                          ),
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundImage: NetworkImage(avatarUrl),
+                          ),
+                        );
+                      }
+
+                      return Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: Offset(0,2)),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(Icons.pets, color: Theme.of(context).colorScheme.onPrimary, size: 20),
+                        ),
+                      );
+                    }),
                   ),
                 ],
               ),

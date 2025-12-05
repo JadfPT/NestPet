@@ -47,5 +47,19 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- URL type for custom scheme deep link handling (nestpet://) -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>nestpet</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>nestpet</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>

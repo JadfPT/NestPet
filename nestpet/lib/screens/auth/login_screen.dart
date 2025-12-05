@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   final _nifCtrl = TextEditingController();
   bool _isRegister = false;
-  UserRole _role = UserRole.user;
+  final UserRole _role = UserRole.user;
   final _auth = AuthService();
   bool _loading = false;
   bool _checkedQuery = false;

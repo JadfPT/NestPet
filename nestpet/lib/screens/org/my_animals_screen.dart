@@ -164,7 +164,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
         });
         // debug feedback
         // ignore: avoid_print
-        print('MyAnimalsScreen: filtros aplicados: ' + res.toString());
+        print('MyAnimalsScreen: filtros aplicados: $res');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Filtros aplicados')));
         }

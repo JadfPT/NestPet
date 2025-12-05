@@ -60,183 +60,165 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final String _selectedSummary = _selectedColors.isEmpty
+    final String selectedSummary = _selectedColors.isEmpty
         ? 'Nenhuma selecionada'
         : (_selectedColors.length > 3
             ? 'Selecionadas: ${_selectedColors.take(3).join(', ')} +${_selectedColors.length - 3}'
             : 'Selecionadas: ${_selectedColors.take(3).join(', ')}');
 
+    final primary = Theme.of(context).colorScheme.primary;
+
     return SafeArea(
       top: true,
       bottom: false,
       child: Padding(
-        // Reduce horizontal padding so the sheet appears wider and
-        // remove bottom padding so it sits flush to the bottom.
-        padding: const EdgeInsets.fromLTRB(8, 16, 8, 0),
-        child: SizedBox(height: MediaQuery.of(context).size.height * 0.60, child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFF2E8D7),
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                border: Border.fromBorderSide(BorderSide(color: Color(0xFF824822), width: 3)),
-              ),
-              child: Stack(
-                children: [
-                  SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.72,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+              border: Border.all(color: primary.withOpacity(0.18), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)],
+            ),
+            child: Column(
+              children: [
+                // drag handle
+                Padding(
+                  padding: const EdgeInsets.only(top: 10, bottom: 6),
+                  child: Center(
+                    child: Container(width: 36, height: 4, decoration: BoxDecoration(color: primary.withOpacity(0.22), borderRadius: BorderRadius.circular(4))),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                  Row(
-                    children: [
-                      const Expanded(child: Text('Filtros', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Limpar filtros',
-                        onPressed: () => setState(() {
-                          tipo = null;
-                          tamanho = null;
-                          idade = 60;
-                          sexo = null;
-                          vacinado = null;
-                          _selectedColors.clear();
-                          _showColorChips = false;
-                          caracteristicasController.text = '';
-                          peso = const RangeValues(0, 40);
-                        }),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: tipo,
-                    decoration: const InputDecoration(labelText: 'Tipo'),
-                    items: const [
-                      DropdownMenuItem(value: 'Cão', child: Text('Cão')),
-                      DropdownMenuItem(value: 'Gato', child: Text('Gato')),
-                    ],
-                    onChanged: (v) => setState(() => tipo = v),
-                  ),
-                  DropdownButtonFormField<String>(
-                    initialValue: tamanho,
-                    decoration: const InputDecoration(labelText: 'Tamanho'),
-                    items: const [
-                      DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),
-                      DropdownMenuItem(value: 'médio', child: Text('Médio')),
-                      DropdownMenuItem(value: 'grande', child: Text('Grande')),
-                    ],
-                    onChanged: (v) => setState(() => tamanho = v),
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: sexo ?? '',
-                    decoration: const InputDecoration(labelText: 'Sexo'),
-                    items: const [
-                      DropdownMenuItem(value: '', child: Text('Indiferente')),
-                      DropdownMenuItem(value: 'M', child: Text('Macho')),
-                      DropdownMenuItem(value: 'F', child: Text('Fêmea')),
-                    ],
-                    onChanged: (v) => setState(() => sexo = (v == '' ? null : v)),
-                  ),
-                  SwitchListTile(
-                    title: const Text('Vacinado'),
-                    value: vacinado ?? false,
-                    onChanged: (v) => setState(() => vacinado = v),
-                  ),
-                  Row(
-                    children: [
-                      const Expanded(child: Text('Cor')),
-                      IconButton(
-                        icon: Icon(_showColorChips ? Icons.expand_less : Icons.expand_more),
-                        onPressed: () => setState(() => _showColorChips = !_showColorChips),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (_showColorChips)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: kCommonColorTags.map((tag) {
-                        final sel = _selectedColors.contains(tag);
-                        return FilterChip(label: Text(tag), selected: sel, onSelected: (v) => setState(() { if (v) _selectedColors.add(tag); else _selectedColors.remove(tag); }));
-                      }).toList(),
-                    )
-                  else
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6.0),
-                      child: Text(_selectedSummary),
-                    ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Text('Idade máx. (meses)'),
-                      Expanded(
-                        child: Slider(
-                          value: idade,
-                          min: 2, max: 120, divisions: 59,
-                          label: idade.round().toString(),
-                          onChanged: (v) => setState(() => idade = v),
+                        Row(
+                          children: [
+                            const Expanded(child: Text('Filtros', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Limpar filtros',
+                              onPressed: () => setState(() {
+                                tipo = null;
+                                tamanho = null;
+                                idade = 60;
+                                sexo = null;
+                                vacinado = null;
+                                _selectedColors.clear();
+                                _showColorChips = false;
+                                caracteristicasController.text = '';
+                                peso = const RangeValues(0, 40);
+                              }),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Peso (kg)'),
-                      RangeSlider(
-                        values: peso,
-                        min: 0,
-                        max: 100,
-                        divisions: 100,
-                        labels: RangeLabels(peso.start.round().toString(), peso.end.round().toString()),
-                        onChanged: (v) => setState(() => peso = v),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: caracteristicasController,
-                    decoration: const InputDecoration(labelText: 'Características '),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).pop({
-                      'tipo': tipo,
-                      'tamanho': tamanho,
-                      'idade': idade.round(),
-                      'sexo': sexo,
-                      'vacinado': vacinado,
-                      'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','),
-                      'pesoMin': peso.start.round(),
-                      'pesoMax': peso.end.round(),
-                      'caracteristicas': caracteristicasController.text.trim().isEmpty ? null : caracteristicasController.text.trim(),
-                    }),
-                    child: const Text('Aplicar'),
-                  ),
-                      ], // Column children
-                    ), // Column
-                  ), // SingleChildScrollView
-                  // separator line at the bottom of the sheet to visually separate
-                  // it from the bottom bar / FAB
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      height: 3,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF824822),
-                        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(0), bottomRight: Radius.circular(0)),
-                      ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          initialValue: tipo,
+                          decoration: const InputDecoration(labelText: 'Tipo'),
+                          items: const [
+                            DropdownMenuItem(value: 'Cão', child: Text('Cão')),
+                            DropdownMenuItem(value: 'Gato', child: Text('Gato')),
+                          ],
+                          onChanged: (v) => setState(() => tipo = v),
+                        ),
+                        DropdownButtonFormField<String>(
+                          initialValue: tamanho,
+                          decoration: const InputDecoration(labelText: 'Tamanho'),
+                          items: const [
+                            DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),
+                            DropdownMenuItem(value: 'médio', child: Text('Médio')),
+                            DropdownMenuItem(value: 'grande', child: Text('Grande')),
+                          ],
+                          onChanged: (v) => setState(() => tamanho = v),
+                        ),
+                        DropdownButtonFormField<String>(
+                          initialValue: sexo ?? '',
+                          decoration: const InputDecoration(labelText: 'Sexo'),
+                          items: const [
+                            DropdownMenuItem(value: '', child: Text('Indiferente')),
+                            DropdownMenuItem(value: 'M', child: Text('Macho')),
+                            DropdownMenuItem(value: 'F', child: Text('Fêmea')),
+                          ],
+                          onChanged: (v) => setState(() => sexo = (v == '' ? null : v)),
+                        ),
+                        SwitchListTile(
+                          title: const Text('Vacinado'),
+                          value: vacinado ?? false,
+                          onChanged: (v) => setState(() => vacinado = v),
+                        ),
+                        Row(
+                          children: [
+                            const Expanded(child: Text('Cor')),
+                            IconButton(icon: Icon(_showColorChips ? Icons.expand_less : Icons.expand_more), onPressed: () => setState(() => _showColorChips = !_showColorChips)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (_showColorChips)
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: kCommonColorTags.map((tag) {
+                              final sel = _selectedColors.contains(tag);
+                              return FilterChip(
+                                label: Text(tag),
+                                selected: sel,
+                                selectedColor: primary.withOpacity(0.14),
+                                labelStyle: TextStyle(color: sel ? primary : null),
+                                onSelected: (v) => setState(() {
+                                  if (v) {
+                                    _selectedColors.add(tag);
+                                  } else {
+                                    _selectedColors.remove(tag);
+                                  }
+                                }),
+                              );
+                            }).toList(),
+                          )
+                        else
+                          Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text(selectedSummary)),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6.0),
+                          child: Row(children: [
+                            const Text('Idade máx. (meses)'),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: SliderTheme(
+                                data: SliderTheme.of(context).copyWith(activeTrackColor: primary, thumbColor: primary, overlayColor: primary.withOpacity(0.12)),
+                                child: Slider(value: idade, min: 2, max: 120, divisions: 59, label: idade.round().toString(), onChanged: (v) => setState(() => idade = v)),
+                              ),
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(height: 8),
+                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const Text('Peso (kg)'),
+                          SliderTheme(
+                            data: SliderTheme.of(context).copyWith(activeTrackColor: primary, thumbColor: primary, overlayColor: primary.withOpacity(0.12)),
+                            child: RangeSlider(values: peso, min: 0, max: 100, divisions: 100, labels: RangeLabels(peso.start.round().toString(), peso.end.round().toString()), onChanged: (v) => setState(() => peso = v)),
+                          ),
+                        ]),
+                        const SizedBox(height: 8),
+                        TextField(controller: caracteristicasController, decoration: const InputDecoration(labelText: 'Características '), onChanged: (_) => setState(() {})),
+                        const SizedBox(height: 12),
+                        SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop({'tipo': tipo, 'tamanho': tamanho, 'idade': idade.round(), 'sexo': sexo, 'vacinado': vacinado, 'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','), 'pesoMin': peso.start.round(), 'pesoMax': peso.end.round(), 'caracteristicas': caracteristicasController.text.trim().isEmpty ? null : caracteristicasController.text.trim()}), child: const Text('Aplicar'))),
+                        const SizedBox(height: 8),
+                      ],
                     ),
                   ),
-                ],
-              ), // Stack
-          ), // Container
-        ), // SizedBox
-      ), // Padding
-    ); // SafeArea
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override

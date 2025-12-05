@@ -146,7 +146,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                 children: [
                   Expanded(child: TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome'))),
                   const SizedBox(width: 12),
-                  Expanded(child: DropdownButtonFormField<String>(value: tipo, items: const [
+                  Expanded(child: DropdownButtonFormField<String>(initialValue: tipo, items: const [
                     DropdownMenuItem(value: 'Cão', child: Text('Cão')),
                     DropdownMenuItem(value: 'Gato', child: Text('Gato')),
                   ], onChanged: (v)=> setState(()=> tipo=v!), decoration: const InputDecoration(labelText: 'Tipo'))),
@@ -210,10 +210,11 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                       label: Text(tag),
                       selected: selected,
                       onSelected: (v) => setState(() {
-                        if (v)
+                        if (v) {
                           _selectedColors.add(tag);
-                        else
+                        } else {
                           _selectedColors.remove(tag);
+                        }
                       }),
                     );
                   }).toList(),

@@ -9,9 +9,11 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/register_user_screen.dart';
 import 'screens/auth/register_org_screen.dart';
+// reset-by-email/ deep-link screen removed (in-app password change only)
 import 'screens/user/user_home_screen.dart';
 import 'screens/user/user_favorites_screen.dart';
 import 'screens/user/profile_screen.dart';
+import 'screens/user/edit_account_screen.dart';
 import 'screens/user/animal_detail_screen.dart';
 import 'screens/user/chat_screen.dart';
 import 'screens/common/messages_screen.dart';
@@ -177,6 +179,7 @@ final router = GoRouter(
     GoRoute(path: '/register/user', builder: (_, __) => const RegisterUserScreen()),
     GoRoute(path: '/register/org', builder: (_, __) => const RegisterOrgScreenFixed()),
     GoRoute(path: '/messages', builder: (_, __) => const MessagesScreen()),
+    // '/auth/reset' route removed — password reset by email disabled
 
     // USER (shell)
     ShellRoute(
@@ -186,6 +189,7 @@ final router = GoRouter(
         GoRoute(path: '/u/home', builder: (_, __) => const UserHomeScreen()),
         GoRoute(path: '/u/favorites', builder: (_, __) => const UserFavoritesScreen()),
         GoRoute(path: '/u/profile', builder: (_, __) => const UserProfileScreen()),
+        GoRoute(path: '/u/edit', builder: (_, __) => const EditAccountScreen()),
       ],
     ),
 

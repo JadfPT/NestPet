@@ -10,7 +10,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final primary = colors.primary;
-    final background = colors.background;
+    final background = colors.surface;
 
     return Scaffold(
       backgroundColor: background,

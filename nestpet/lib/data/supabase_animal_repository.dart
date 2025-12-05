@@ -102,10 +102,10 @@ class SupabaseAnimalRepository {
     };
     // debug: log payload and request result
     // ignore: avoid_print
-    print('SupabaseAnimalRepository.add: inserting data: ' + data.toString());
+    print('SupabaseAnimalRepository.add: inserting data: $data');
     final inserted = await _client.from('animals').insert(data).select().maybeSingle();
     // ignore: avoid_print
-    print('SupabaseAnimalRepository.add: insert result: ' + inserted.toString());
+    print('SupabaseAnimalRepository.add: insert result: $inserted');
     _cache.insert(0, a);
     return a;
   }
@@ -134,7 +134,7 @@ class SupabaseAnimalRepository {
     print('SupabaseAnimalRepository.updateAnimal: updating id=${a.id} data=${data.toString()}');
     final updated = await _client.from('animals').update(data).eq('id', a.id).select().maybeSingle();
     // ignore: avoid_print
-    print('SupabaseAnimalRepository.updateAnimal: update result: ' + updated.toString());
+    print('SupabaseAnimalRepository.updateAnimal: update result: $updated');
     final idx = _cache.indexWhere((x) => x.id == a.id);
     if (idx != -1) _cache[idx] = a;
   }

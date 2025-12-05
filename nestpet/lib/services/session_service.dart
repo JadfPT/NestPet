@@ -6,6 +6,7 @@ class SessionService {
   static const _roleKey = 'nestpet_role';
   static const _orgNameKey = 'nestpet_org_name';
   static const _orgNifKey = 'nestpet_org_nif';
+  static const _notifyKey = 'nestpet_notify_enabled';
 
   /// Save the role string ('user' or 'org')
   static Future<void> saveRole(String role) async {
@@ -44,5 +45,15 @@ class SessionService {
   static Future<String?> loadRole() async {
     final sp = await SharedPreferences.getInstance();
     return sp.getString(_roleKey);
+  }
+
+  static Future<void> saveNotificationsEnabled(bool enabled) async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool(_notifyKey, enabled);
+  }
+
+  static Future<bool?> loadNotificationsEnabled() async {
+    final sp = await SharedPreferences.getInstance();
+    return sp.getBool(_notifyKey);
   }
 }

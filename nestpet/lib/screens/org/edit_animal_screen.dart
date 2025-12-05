@@ -40,7 +40,11 @@ class _EditColorChipsState extends State<_EditColorChips> {
 
   void _toggle(String tag, bool value) {
     setState(() {
-      if (value) _selected.add(tag); else _selected.remove(tag);
+      if (value) {
+        _selected.add(tag);
+      } else {
+        _selected.remove(tag);
+      }
     });
     widget.onChanged?.call(_selected);
   }

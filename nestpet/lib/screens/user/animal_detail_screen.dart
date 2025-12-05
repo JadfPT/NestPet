@@ -290,8 +290,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       // suporte a diferentes nomes: expectativaVidaAnos, expectativaVida, life_expectancy_years
       final ev = (animal as dynamic).expectativaVidaAnos ?? (animal as dynamic).expectativaVida ?? (animal as dynamic).life_expectancy_years;
       if (ev != null) {
-        if (ev is int) expVida = '$ev anos';
-        else if (ev is String && ev.trim().isNotEmpty) {
+        if (ev is int) {
+          expVida = '$ev anos';
+        } else if (ev is String && ev.trim().isNotEmpty) {
           final parsed = int.tryParse(ev);
           expVida = parsed != null ? '$parsed anos' : ev;
         }

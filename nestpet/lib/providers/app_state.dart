@@ -10,6 +10,7 @@ enum UserRole { user, org }
 
 class AppState extends ChangeNotifier {
   UserRole? role;
+  String? displayName;
   final animals = SupabaseAnimalRepository();
   final chat = SupabaseChatRepository();
   final favs = SupabaseFavoritesRepository();
@@ -30,6 +31,12 @@ class AppState extends ChangeNotifier {
     // If Supabase has a restored session, derive role from server metadata
     final supaUser = Supabase.instance.client.auth.currentUser;
     if (supaUser != null) {
+      // expose displayName for UI binding
+      try {
+        displayName = supaUser.userMetadata?['displayName'] ?? supaUser.userMetadata?['name'];
+      } catch (_) {
+        displayName = null;
+      }
       // prefer server-side metadata if present
       try {
         final meta = supaUser.userMetadata;
@@ -59,6 +66,12 @@ class AppState extends ChangeNotifier {
 
   void login(UserRole r) {
     role = r;
+    // refresh display name on login
+    try {
+      displayName = Supabase.instance.client.auth.currentUser?.userMetadata?['displayName'] ?? Supabase.instance.client.auth.currentUser?.userMetadata?['name'];
+    } catch (_) {
+      displayName = null;
+    }
     // persist role so it can be restored on app restart
     SessionService.saveRole(r == UserRole.org ? 'org' : 'user');
 
@@ -83,7 +96,13 @@ class AppState extends ChangeNotifier {
       Supabase.instance.client.auth.signOut().catchError((_) {});
     } catch (_) {}
     role = null;
+    displayName = null;
     SessionService.clearRole();
+    notifyListeners();
+  }
+
+  void setDisplayName(String? name) {
+    displayName = name;
     notifyListeners();
   }
 
