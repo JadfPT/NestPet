@@ -6,6 +6,7 @@ import '../../app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../providers/app_state.dart';
 import '../../models/animal.dart';
@@ -213,7 +214,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     _buildInfoCard(context, animal, primary),
                     const SizedBox(height: 20),
                     Text(
-                      'Informações',
+                      'Descrição',
                       style: TextStyle(
                         color: primary,
                         fontSize: 16,
@@ -228,6 +229,96 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         'Sem informações adicionais.',
                         style: TextStyle(color: Colors.black54),
                       ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Informações Adicionais',
+                      style: TextStyle(
+                        color: primary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FutureBuilder<dynamic>(
+                      future: () async {
+                        try {
+                          // Get org_id from animals table (animal model doesn't store it)
+                          final row = await Supabase.instance.client.from('animals').select('org_id').eq('id', animal.id).maybeSingle();
+                          if (row == null) return null;
+                          final orgId = row['org_id'];
+                          if (orgId == null) return null;
+                          final org = await Supabase.instance.client.from('organizations').select().eq('user_id', orgId).maybeSingle();
+                          return org;
+                        } catch (_) {
+                          return null;
+                        }
+                      }(),
+                      builder: (context, snap) {
+                        if (snap.connectionState != ConnectionState.done) {
+                          return const SizedBox.shrink();
+                        }
+                        final org = snap.data;
+                        if (org == null) {
+                          return const Text('Sem informações da instituição.', style: TextStyle(color: Colors.black54));
+                        }
+                        final address = (org['address'] ?? org['morada'] ?? '') as String? ?? '';
+                        final hours = (org['hours'] ?? org['horario'] ?? org['service_hours'] ?? '') as String? ?? '';
+                        final phone = (org['phone'] ?? org['contacts'] ?? org['contact'] ?? '') as String? ?? '';
+                        final contactEmail = (org['contact_email'] ?? org['email'] ?? '') as String? ?? '';
+                        final website = (org['website'] ?? '') as String? ?? '';
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (address.isNotEmpty) ...[
+                              GestureDetector(
+                                onTap: () async {
+                                  final encoded = Uri.encodeComponent(address);
+                                  final url = 'https://www.google.com/maps/search/?api=1&query=$encoded';
+                                  try {
+                                    await launchUrlString(url);
+                                  } catch (_) {}
+                                },
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.place, size: 18, color: Colors.black54),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(address, style: const TextStyle(decoration: TextDecoration.underline))),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            if (hours.isNotEmpty) ...[
+                              Row(children: [const Icon(Icons.access_time, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(hours))]),
+                              const SizedBox(height: 8),
+                            ],
+                            if (phone.isNotEmpty) ...[
+                              Row(children: [const Icon(Icons.phone, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(phone))]),
+                              const SizedBox(height: 8),
+                            ],
+                            if (contactEmail.isNotEmpty) ...[
+                              Row(children: [const Icon(Icons.email, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(contactEmail))]),
+                              const SizedBox(height: 8),
+                            ],
+                            if (website.isNotEmpty) ...[
+                              GestureDetector(
+                                onTap: () async {
+                                  var url = website.trim();
+                                  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                                    url = 'https://$url';
+                                  }
+                                  try {
+                                    await launchUrlString(url);
+                                  } catch (_) {}
+                                },
+                                child: Row(children: [const Icon(Icons.link, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(website, style: const TextStyle(decoration: TextDecoration.underline)))]),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
                     const SizedBox(height: 80), // espaço para o botão fixo
                   ],
                 ),

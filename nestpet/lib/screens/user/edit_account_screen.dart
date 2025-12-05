@@ -18,6 +18,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   late TextEditingController _nameCtrl;
   bool _saving = false;
   late String _initialName;
+  bool _isOrg = false;
 
   @override
   void initState() {
@@ -26,6 +27,24 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     final name = user?.userMetadata?['displayName'] ?? user?.userMetadata?['name'] ?? '';
     _nameCtrl = TextEditingController(text: name);
     _initialName = name;
+    _maybeLoadOrgName();
+  }
+
+  Future<void> _maybeLoadOrgName() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+      final org = await Supabase.instance.client.from('organizations').select().eq('user_id', user.id).maybeSingle();
+      if (org != null) {
+        final orgName = (org['name'] ?? org['nome'] ?? '').toString();
+        if (orgName.isNotEmpty) {
+          _isOrg = true;
+          _nameCtrl.text = orgName;
+          _initialName = orgName;
+          if (mounted) setState(() {});
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -125,9 +144,69 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     );
     if (ok != true) return;
 
+    final client = Supabase.instance.client;
+    // Try calling the server-side RPC which deletes the authenticated user's data
+    // and the corresponding auth.users entry. This function must be created in
+    // Supabase SQL Editor as an admin (see db/migrations/0003_remove_account_rpc.sql).
     try {
-      await Supabase.instance.client.auth.signOut();
+      // Try to invoke server RPC (created with admin privileges) to remove
+      // the authenticated user's account and related rows. If the RPC
+      // returns an error (but does not throw), we detect it and run the
+      // client-side fallback deletes.
+      final rpcRes = await client.rpc('remove_account_and_data').select();
+      // rpcRes might be a PostgrestResponse or dynamic. Check for an error
+      // in a defensive way and run fallback if present.
+      var rpcError;
+      try {
+        rpcError = (rpcRes as dynamic).error;
+      } catch (_) {
+        rpcError = null;
+      }
+      if (rpcError != null) {
+        // Log and show a brief message
+        final msg = rpcError?.message?.toString() ?? rpcError.toString();
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro RPC: $msg — a tentar eliminação local')));
+        // run fallback deletes below
+        try {
+          final uid = client.auth.currentUser?.id;
+          if (uid != null) {
+            await client.from('animals').delete().eq('org_id', uid);
+            await client.from('favorites').delete().eq('user_id', uid);
+            await client.from('typing_status').delete().eq('user_id', uid);
+            await client.from('messages').delete().eq('user_id', uid);
+            await client.from('organizations').delete().eq('user_id', uid);
+            await client.from('profiles').delete().eq('id', uid);
+          }
+        } catch (e) {
+          // swallow but log
+          // ignore: avoid_print
+          print('Fallback delete error: $e');
+        }
+      }
+    } catch (e) {
+      // If RPC invocation itself throws, attempt best-effort deletes locally
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao invocar RPC: $e — a tentar eliminação local')));
+      try {
+        final uid = client.auth.currentUser?.id;
+        if (uid != null) {
+          await client.from('animals').delete().eq('org_id', uid);
+          await client.from('favorites').delete().eq('user_id', uid);
+          await client.from('typing_status').delete().eq('user_id', uid);
+          await client.from('messages').delete().eq('user_id', uid);
+          await client.from('organizations').delete().eq('user_id', uid);
+          await client.from('profiles').delete().eq('id', uid);
+        }
+      } catch (e2) {
+        // ignore: avoid_print
+        print('Fallback delete error after exception: $e2');
+      }
+    }
+
+    // Finally sign out locally
+    try {
+      await client.auth.signOut();
     } catch (_) {}
+
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sessão terminada')));
       try {
@@ -175,7 +254,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
-                  Center(child: AvatarPicker(imageUrl: avatarUrl, initials: display.isNotEmpty ? display[0] : 'U', radius: 52, onImage: (file) => _uploadAvatar(file))),
+                  Center(child: AvatarPicker(imageUrl: avatarUrl, initials: _isOrg ? 'I' : (display.isNotEmpty ? display[0] : 'U'), radius: 52, onImage: (file) => _uploadAvatar(file))),
                   const SizedBox(height: 12),
                   Form(
                     key: _formKey,
