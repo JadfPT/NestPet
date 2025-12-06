@@ -162,7 +162,7 @@ class _OrgShell extends StatelessWidget {
 
                       IconButton(
                         onPressed: () => context.go('/o/profile'),
-                        icon: Icon(profActive ? Icons.apartment : Icons.apartment_outlined),
+                        icon: Icon(profActive ? Icons.person : Icons.person_outline),
                         color: Colors.white,
                       ),
                     ],

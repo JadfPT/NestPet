@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
@@ -152,9 +153,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     // Supabase SQL Editor as an admin (see db/migrations/0003_remove_account_rpc.sql).
     try {
       // Try to invoke server RPC (created with admin privileges) to remove
-      // the authenticated user's account and related rows. If the RPC
-      // returns an error (but does not throw), we detect it and run the
-      // client-side fallback deletes.
+      // the authenticated user's account and related rows.
       final rpcRes = await client.rpc('remove_account_and_data').select();
       // rpcRes might be a PostgrestResponse or dynamic. Check for an error
       // in a defensive way and run fallback if present.
@@ -165,10 +164,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         rpcError = null;
       }
       if (rpcError != null) {
-        // Log and show a brief message
-        final msg = rpcError?.message?.toString() ?? rpcError.toString();
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro RPC: $msg — a tentar eliminação local')));
-        // run fallback deletes below
+        // run fallback deletes silently
         try {
           final uid = client.auth.currentUser?.id;
           if (uid != null) {
@@ -187,7 +183,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       }
     } catch (e) {
       // If RPC invocation itself throws, attempt best-effort deletes locally
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao invocar RPC: $e — a tentar eliminação local')));
       try {
         final uid = client.auth.currentUser?.id;
         if (uid != null) {
@@ -210,11 +205,10 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     } catch (_) {}
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sessão terminada')));
       try {
         context.read<AppState>().logout();
       } catch (_) {}
-      Navigator.of(context).popUntil((r) => r.isFirst);
+      context.go('/welcome');
     }
   }
 
