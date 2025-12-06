@@ -53,7 +53,7 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     final primary = colors.primary;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

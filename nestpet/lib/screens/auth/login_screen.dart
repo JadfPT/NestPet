@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final surface = colors.surface;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

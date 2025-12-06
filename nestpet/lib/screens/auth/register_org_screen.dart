@@ -116,7 +116,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
     final primary = colors.primary;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
