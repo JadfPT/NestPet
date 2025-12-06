@@ -26,7 +26,7 @@ class OrgProfileScreen extends StatelessWidget {
     }();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil da Instituição')),
+      appBar: AppBar(title: Text('Perfil', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
@@ -110,10 +110,67 @@ class OrgProfileScreen extends StatelessWidget {
                           ),
                           const Divider(height: 1),
                           ListTile(
-                            leading: const Icon(Icons.delete_forever),
-                            title: const Text('Apagar conta'),
-                            subtitle: const Text('Ação irreversível'),
-                            onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Funcionalidade por implementar'))),
+                            leading: const Icon(Icons.help_outline),
+                            title: const Text('Ajuda'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => showDialog<void>(
+                              context: context,
+                              builder: (c) => AlertDialog(
+                                title: const Text('Ajuda para Instituições'),
+                                content: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text('Como gerir a sua instituição', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      SizedBox(height: 8),
+                                      Text('• Adicionar/editar animais: usa o botão "Adicionar animal" para publicar um novo anúncio. Em cada cartão pode editar ou apagar o anúncio.'),
+                                      Text('• Media: adicione fotos e vídeos para melhorar o anúncio. Suportamos imagens e vídeos curtos.'),
+                                      Text('• Mensagens: as mensagens chegadas são mostradas na secção de mensagens; responde para combinar visitas ou fornecer mais informações.'),
+                                      SizedBox(height: 8),
+                                      Text('• Favoritos: os utilizadores podem favoritar animais; verás essas interacções para priorizar contactos.'),
+                                      SizedBox(height: 8),
+                                      Text('• Perfil da instituição: atualiza morada, horários e contactos em "Detalhes" para que os utilizadores vejam as informações corretas.'),
+                                      SizedBox(height: 8),
+                                      Text('• Apagar conta: se precisares apagar a conta, contacta o suporte ou segue a opção de eliminação disponível nas definições de conta (esta ação remove os registos associados).'),
+                                    ],
+                                  ),
+                                ),
+                                actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Fechar'))],
+                              ),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.lock_outline),
+                            title: const Text('Privacidade'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => showDialog<void>(
+                              context: context,
+                              builder: (c) => AlertDialog(
+                                title: const Text('Política de Privacidade'),
+                                content: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text('Introdução', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      SizedBox(height: 8),
+                                      Text('A NestPet recolhe dados necessários para o funcionamento: email, nome da instituição, contactos, anúncios e media publicados.'),
+                                      SizedBox(height: 8),
+                                      Text('Utilização dos dados:'),
+                                      Text('• Gestão de anúncios e comunicação com utilizadores.'),
+                                      Text('• Melhoria de serviço e análise interna.'),
+                                      SizedBox(height: 8),
+                                      Text('Partilha:'),
+                                      Text('Os dados da instituição relacionados com anúncios são visíveis a utilizadores interessados. Não partilhamos dados sensíveis sem consentimento.'),
+                                      SizedBox(height: 8),
+                                      Text('Contacto:'),
+                                      Text('Para questões sobre privacidade contacte: privacidade@exemplo.com'),
+                                    ],
+                                  ),
+                                ),
+                                actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Fechar'))],
+                              ),
+                            ),
                           ),
                           const Divider(height: 1),
                           ListTile(
