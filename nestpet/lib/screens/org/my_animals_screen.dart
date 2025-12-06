@@ -153,13 +153,32 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
                       ),
                     ),
                     Positioned(
-                      right: 6,
-                      bottom: 6,
-                      child: IconButton.filledTonal(
-                        icon: const Icon(Icons.more_vert),
-                        onPressed: () => _openActions(context, a),
-                        tooltip: 'Mais ações',
-                      ),
+                      right: 12,
+                      top: 12,
+                      child: Builder(builder: (ctx) {
+                        final primary = Theme.of(ctx).colorScheme.primary;
+                        final surface = Theme.of(ctx).colorScheme.surface;
+                        return Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: surface.withAlpha((0.75 * 255).round()),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: primary.withAlpha((0.9 * 255).round())),
+                          ),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => _openActions(context, a),
+                            child: Center(
+                              child: Icon(
+                                Icons.more_vert,
+                                size: 18,
+                                color: primary,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
                   ],
                 );
