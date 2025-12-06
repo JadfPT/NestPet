@@ -66,6 +66,19 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   final form = GlobalKey<FormState>();
   late Animal a;
   bool _showColorChips = false;
+  // form state mirroring AddAnimalScreen so structure matches
+  final _nomeController = TextEditingController();
+  final _descricaoController = TextEditingController();
+  final _personalidadeController = TextEditingController();
+  final _caracteristicasController = TextEditingController();
+  String tipo = 'Cão';
+  String sexo = 'M';
+  int idade = 6;
+  double peso = 5;
+  String tamanho = 'médio';
+  int expectativaVidaAnos = 0;
+  bool vacinado = false;
+  final Set<String> _selectedColors = {};
 
   @override
   void initState() {
@@ -73,6 +86,19 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
     final cached = context.read<AppState>().animals.byIdSync(widget.id);
     if (cached != null) {
       a = cached;
+      // initialize controllers/state from cached
+      _nomeController.text = a.nome;
+      _descricaoController.text = a.descricao;
+      _personalidadeController.text = a.personalidade;
+      _caracteristicasController.text = a.caracteristicas;
+      tipo = a.tipo;
+      sexo = a.sexo;
+      idade = a.idadeMeses;
+      peso = a.pesoKg <= 0.0 ? 5.0 : a.pesoKg;
+      tamanho = a.tamanho;
+      expectativaVidaAnos = a.expectativaVidaAnos;
+      vacinado = a.vacinado;
+      _selectedColors.addAll(a.cor.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
     } else {
       a = Animal(id: widget.id, nome: '', tipo: 'Cão', sexo: 'M', idadeMeses: 0, pesoKg: 0.0, tamanho: 'médio', descricao: '', media: []);
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -142,38 +168,46 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(initialValue: a.nome, decoration: const InputDecoration(labelText: 'Nome'), onSaved: (v)=> a.nome=v?.trim()??a.nome),
+            TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome')),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: DropdownButtonFormField(initialValue: a.tamanho, items: const [
+                Expanded(child: DropdownButtonFormField<String>(initialValue: tamanho, items: const [
                   DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),
                   DropdownMenuItem(value: 'médio', child: Text('Médio')),
                   DropdownMenuItem(value: 'grande', child: Text('Grande')),
-                ], onChanged: (v)=> setState(()=> a.tamanho=v! ), decoration: const InputDecoration(labelText: 'Tamanho'))),
+                ], onChanged: (v)=> setState(()=> tamanho=v! ), decoration: const InputDecoration(labelText: 'Tamanho'))),
                 const SizedBox(width: 12),
-                Expanded(child: TextFormField(initialValue: a.idadeMeses.toString(), decoration: const InputDecoration(labelText: 'Idade (meses)'), keyboardType: TextInputType.number, onSaved: (v)=> a.idadeMeses=int.tryParse(v??'${a.idadeMeses}')??a.idadeMeses)),
+                Expanded(child: DropdownButtonFormField<String>(initialValue: sexo, items: const [
+                  DropdownMenuItem(value: 'M', child: Text('Macho')),
+                  DropdownMenuItem(value: 'F', child: Text('Fêmea')),
+                ], onChanged: (v)=> setState(()=> sexo=v! ), decoration: const InputDecoration(labelText: 'Sexo'))),
               ],
             ),
-            TextFormField(initialValue: a.pesoKg.toStringAsFixed(1), decoration: const InputDecoration(labelText: 'Peso (kg)'), keyboardType: TextInputType.number, onSaved: (v)=> a.pesoKg=double.tryParse(v??'${a.pesoKg}')??a.pesoKg),
-            TextFormField(initialValue: a.descricao, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3, onSaved: (v)=> a.descricao=v?.trim()??a.descricao),
+
+            const SizedBox(height: 8),
+            Text('Idade (meses): $idade'),
+            Slider(value: idade.toDouble(), min: 0, max: 120, divisions: 120, onChanged: (v)=> setState(()=> idade=v.round())),
+            Text('Peso (kg): ${peso.toStringAsFixed(1)}'),
+            Slider(value: peso, min: 0.5, max: 60, divisions: 119, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
+            TextFormField(controller: _descricaoController, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3),
             const SizedBox(height: 12),
-            TextFormField(initialValue: a.personalidade, decoration: const InputDecoration(labelText: 'Personalidade'), onSaved: (v)=> a.personalidade=v?.trim()??a.personalidade),
+            TextFormField(controller: _personalidadeController, decoration: const InputDecoration(labelText: 'Personalidade')),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Expectativa de vida (anos): ${a.expectativaVidaAnos}'),
-                  Slider(value: a.expectativaVidaAnos.toDouble(), min: 0, max: 30, divisions: 30, onChanged: (v)=> setState(()=> a.expectativaVidaAnos = v.round())),
+                  Text('Expectativa de vida (anos): $expectativaVidaAnos'),
+                  Slider(value: expectativaVidaAnos.toDouble(), min: 0, max: 30, divisions: 30, onChanged: (v)=> setState(()=> expectativaVidaAnos = v.round())),
                 ])),
                 const SizedBox(width: 8),
                 Column(children: [
                   const Text('Vacinado'),
-                  Checkbox(value: a.vacinado, onChanged: (v)=> setState(()=> a.vacinado = v ?? false)),
+                  Checkbox(value: vacinado, onChanged: (v)=> setState(()=> vacinado = v ?? false)),
                 ]),
               ],
             ),
-            TextFormField(initialValue: a.caracteristicas, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2, onSaved: (v)=> a.caracteristicas=v?.trim()??a.caracteristicas),
+            TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -186,11 +220,24 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             const SizedBox(height: 6),
             if (_showColorChips)
-              _EditColorChips(initialValue: a.cor, onChanged: (sel) { setState(() { a.cor = sel.join(','); }); })
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: kCommonColorTags.map((tag) {
+                  final selected = _selectedColors.contains(tag);
+                  return FilterChip(
+                    label: Text(tag),
+                    selected: selected,
+                    onSelected: (v) => setState(() {
+                      if (v) _selectedColors.add(tag); else _selectedColors.remove(tag);
+                    }),
+                  );
+                }).toList(),
+              )
             else
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6.0),
-                child: Text(a.cor.trim().isEmpty ? 'Nenhuma selecionada' : 'Selecionadas: ${a.cor.split(',').where((s)=>s.trim().isNotEmpty).take(3).join(', ')}${a.cor.split(',').where((s)=>s.trim().isNotEmpty).length>3? ' +${a.cor.split(',').where((s)=>s.trim().isNotEmpty).length-3}':''}'),
+                child: Text(_selectedColors.isEmpty ? 'Nenhuma selecionada' : 'Selecionadas: ${_selectedColors.take(3).join(', ')}${_selectedColors.length>3? ' +${_selectedColors.length-3}':''}'),
               ),
             const SizedBox(height: 12),
             Row(
@@ -226,7 +273,19 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () async {
-                form.currentState?.save();
+                // populate model from controllers/state
+                a.nome = _nomeController.text.trim();
+                a.descricao = _descricaoController.text.trim();
+                a.personalidade = _personalidadeController.text.trim();
+                a.caracteristicas = _caracteristicasController.text.trim();
+                a.tipo = tipo;
+                a.sexo = sexo;
+                a.idadeMeses = idade;
+                a.pesoKg = peso;
+                a.tamanho = tamanho;
+                a.expectativaVidaAnos = expectativaVidaAnos;
+                a.vacinado = vacinado;
+                a.cor = _selectedColors.join(',');
                 try {
                   await context.read<AppState>().updateAnimal(a);
                   if (!context.mounted) return;
@@ -244,5 +303,14 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _descricaoController.dispose();
+    _personalidadeController.dispose();
+    _caracteristicasController.dispose();
+    super.dispose();
   }
 }

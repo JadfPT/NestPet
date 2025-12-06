@@ -6,7 +6,7 @@ import '../../providers/app_state.dart';
 import '../widgets/animal_grid_card.dart';
 import '../widgets/empty_state.dart';
 import '../../models/animal.dart';
-import '../user/animal_filters_sheet.dart';
+// org screens do not use the user filters sheet
 
 class MyAnimalsScreen extends StatefulWidget {
   const MyAnimalsScreen({super.key});
@@ -18,15 +18,7 @@ class MyAnimalsScreen extends StatefulWidget {
 class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   OverlayEntry? _fabOverlay;
   double? _lastFabBottomInset;
-  // filter state
-  String? tipo;
-  String? tamanho;
-  int? idadeMax;
-  String? sexo;
-  bool? vacinado;
-  String? cor;
-  int? pesoMin;
-  int? pesoMax;
+  // orgs don't use filters here
 
   void _openActions(BuildContext context, Animal a) {
     showModalBottomSheet(
@@ -125,101 +117,16 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
     super.dispose();
   }
 
-  Future<void> _openFilters() async {
-    final hadOverlay = _fabOverlay != null;
-    if (hadOverlay) {
-      _fabOverlay?.remove();
-      _fabOverlay = null;
-    }
 
-    try {
-      final res = await showModalBottomSheet<Map<String, dynamic>>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => AnimalFiltersSheet(
-          initialTipo: tipo,
-          initialTamanho: tamanho,
-          initialIdadeMax: idadeMax,
-          initialSexo: sexo,
-          initialVacinado: vacinado,
-          initialCor: cor,
-          initialPesoMin: pesoMin?.toDouble(),
-          initialPesoMax: pesoMax?.toDouble(),
-        ),
-      );
-      if (res != null && mounted) {
-        setState(() {
-          tipo = res['tipo'] as String?;
-          tamanho = res['tamanho'] as String?;
-          idadeMax = res['idade'] as int?;
-          sexo = res['sexo'] as String?;
-          vacinado = res['vacinado'] as bool?;
-          cor = res['cor'] as String?;
-          pesoMin = res['pesoMin'] as int?;
-          pesoMax = res['pesoMax'] as int?;
-          // caracteristicas removed from filters
-        });
-        // debug feedback
-        // ignore: avoid_print
-        print('MyAnimalsScreen: filtros aplicados: $res');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Filtros aplicados')));
-        }
-      }
-    } finally {
-      if (hadOverlay && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
-      }
-    }
-  }
-
-  void _clearFilters() {
-    setState(() {
-      tipo = null;
-      tamanho = null;
-      idadeMax = null;
-      sexo = null;
-      vacinado = null;
-      cor = null;
-      pesoMin = null;
-      pesoMax = null;
-    });
-  }
+  // No filter methods: orgs don't expose filters in this screen
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final base = app.animals.all();
-      final items = base.where((a) {
-      if (tipo != null && tipo!.isNotEmpty && a.tipo != tipo) return false;
-      if (tamanho != null && tamanho!.isNotEmpty && a.tamanho != tamanho) return false;
-      if (idadeMax != null && a.idadeMeses > idadeMax!) return false;
-      if (sexo != null && sexo!.isNotEmpty && a.sexo != sexo) return false;
-      if (vacinado != null && a.vacinado != vacinado) return false;
-      if (cor != null && cor!.isNotEmpty && !a.cor.toLowerCase().contains(cor!.toLowerCase())) return false;
-      if (pesoMin != null && a.pesoKg < pesoMin!) return false;
-      if (pesoMax != null && a.pesoKg > pesoMax!) return false;
-      return true;
-    }).toList();
+    final items = app.animals.all();
 
     return Scaffold(
-     appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.onPrimary),
-          tooltip: 'Filtrar',
-          onPressed: _openFilters,
-        ),
-        title: Text('Os seus animais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
-        actions: [
-          if ([tipo, tamanho, idadeMax, sexo, vacinado, cor, pesoMin, pesoMax].any((e) => e != null))
-            IconButton(
-              icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary),
-              tooltip: 'Limpar filtros',
-              onPressed: _clearFilters,
-            ),
-        ],
-      ),
+       appBar: AppBar(title: Text('Os seus animais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary))),
       body: items.isEmpty
           ? EmptyState(
               icon: Icons.pets,
