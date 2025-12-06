@@ -28,7 +28,8 @@ import 'screens/org/chat_screen.dart';
 // Shells de bottom bar (como já tinhas)
 class _UserShell extends StatelessWidget {
   final Widget child;
-  const _UserShell({required this.child});
+  final String location;
+  const _UserShell({required this.child, required this.location});
 
   @override
   Widget build(BuildContext context) {
@@ -57,36 +58,42 @@ class _UserShell extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: Offset(0,6))],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () => context.go('/u/favorites'),
-                      icon: const Icon(Icons.star_border),
-                      color: Colors.white,
-                    ),
-
-                    // center home inside the pill
-                    GestureDetector(
-                      onTap: () => context.go('/u/home'),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: const BoxDecoration(
-                          color: Colors.transparent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.home, color: Colors.white, size: 26),
+                child: Builder(builder: (ctx) {
+                  final loc = location;
+                  final favActive = loc.startsWith('/u/favorites');
+                  final homeActive = loc.startsWith('/u/home');
+                  final profActive = loc.startsWith('/u/profile');
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () => context.go('/u/favorites'),
+                        icon: Icon(favActive ? Icons.star : Icons.star_border),
+                        color: Colors.white,
                       ),
-                    ),
 
-                    IconButton(
-                      onPressed: () => context.go('/u/profile'),
-                      icon: const Icon(Icons.person_outline),
-                      color: Colors.white,
-                    ),
-                  ],
-                ),
+                      // center home inside the pill
+                      GestureDetector(
+                        onTap: () => context.go('/u/home'),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(homeActive ? Icons.home : Icons.home_outlined, color: Colors.white, size: 26),
+                        ),
+                      ),
+
+                      IconButton(
+                        onPressed: () => context.go('/u/profile'),
+                        icon: Icon(profActive ? Icons.person : Icons.person_outline),
+                        color: Colors.white,
+                      ),
+                    ],
+                  );
+                }),
               ),
             ),
           ),
@@ -100,7 +107,8 @@ class _UserShell extends StatelessWidget {
 
 class _OrgShell extends StatelessWidget {
   final Widget child;
-  const _OrgShell({required this.child});
+  final String location;
+  const _OrgShell({required this.child, required this.location});
 
   @override
   Widget build(BuildContext context) {
@@ -128,32 +136,38 @@ class _OrgShell extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: Offset(0,6))],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () => context.go('/o/add'),
-                      icon: const Icon(Icons.add_box_outlined),
-                      color: Colors.white,
-                    ),
-
-                    GestureDetector(
-                      onTap: () => context.go('/o/home'),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.transparent),
-                        child: const Icon(Icons.home, color: Colors.white, size: 26),
+                child: Builder(builder: (ctx) {
+                  final loc = location;
+                  final addActive = loc.startsWith('/o/add');
+                  final homeActive = loc.startsWith('/o/home');
+                  final profActive = loc.startsWith('/o/profile');
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () => context.go('/o/add'),
+                        icon: Icon(addActive ? Icons.add_box : Icons.add_box_outlined),
+                        color: Colors.white,
                       ),
-                    ),
 
-                    IconButton(
-                      onPressed: () => context.go('/o/profile'),
-                      icon: const Icon(Icons.apartment),
-                      color: Colors.white,
-                    ),
-                  ],
-                ),
+                      GestureDetector(
+                        onTap: () => context.go('/o/home'),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.transparent),
+                          child: Icon(homeActive ? Icons.home : Icons.home_outlined, color: Colors.white, size: 26),
+                        ),
+                      ),
+
+                      IconButton(
+                        onPressed: () => context.go('/o/profile'),
+                        icon: Icon(profActive ? Icons.apartment : Icons.apartment_outlined),
+                        color: Colors.white,
+                      ),
+                    ],
+                  );
+                }),
               ),
             ),
           ),
@@ -184,7 +198,7 @@ final router = GoRouter(
     // USER (shell)
     ShellRoute(
       navigatorKey: _userShellKey,
-      builder: (_, __, child) => _UserShell(child: child),
+      builder: (_, state, child) => _UserShell(child: child, location: state.fullPath ?? '/'),
       routes: [
         GoRoute(path: '/u/home', builder: (_, __) => const UserHomeScreen()),
         GoRoute(path: '/u/favorites', builder: (_, __) => const UserFavoritesScreen()),
@@ -196,7 +210,7 @@ final router = GoRouter(
     // ORG (shell)
     ShellRoute(
       navigatorKey: _orgShellKey,
-      builder: (_, __, child) => _OrgShell(child: child),
+      builder: (_, state, child) => _OrgShell(child: child, location: state.fullPath ?? '/'),
       routes: [
         GoRoute(path: '/o/home', builder: (_, __) => const MyAnimalsScreen()),
         GoRoute(path: '/o/add', builder: (_, __) => const AddAnimalScreen()),

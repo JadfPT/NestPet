@@ -24,7 +24,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? cor;
   int? pesoMin;
   int? pesoMax;
-  String? caracteristicas;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   OverlayEntry? _fabOverlay;
@@ -54,7 +53,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           initialCor: cor,
           initialPesoMin: pesoMin?.toDouble(),
           initialPesoMax: pesoMax?.toDouble(),
-          initialCaracteristicas: caracteristicas,
         ),
       );
       if (res != null && mounted) {
@@ -67,7 +65,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           cor = res['cor'] as String?;
           pesoMin = res['pesoMin'] as int?;
           pesoMax = res['pesoMax'] as int?;
-          caracteristicas = res['caracteristicas'] as String?;
+          // caracteristicas removed from filters
         });
       }
     } finally {
@@ -98,14 +96,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       // peso
       if (pesoMin != null && a.pesoKg < pesoMin!) return false;
       if (pesoMax != null && a.pesoKg > pesoMax!) return false;
-      // caracteristicas
-      if (caracteristicas != null && caracteristicas!.isNotEmpty) {
-        final k = caracteristicas!.toLowerCase();
-        final inNome = a.nome.toLowerCase().contains(k);
-        final inDesc = a.descricao.toLowerCase().contains(k);
-        final inCar = a.caracteristicas.toLowerCase().contains(k);
-        if (!(inNome || inDesc || inCar)) return false;
-      }
+      // caracteristicas filter removed
       return true;
     }).toList();
 
@@ -236,7 +227,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         title: 'Nenhum animal encontrado',
                         message: 'Tenta ajustar os filtros ou volta a tentar mais tarde.',
                         actionText: 'Limpar filtros',
-                        onAction: () => setState(() { tipo = null; tamanho = null; idadeMax = null; }),
+                        onAction: () => setState(() { tipo = null; tamanho = null; idadeMax = null; sexo = null; vacinado = null; cor = null; pesoMin = null; pesoMax = null; }),
                       )
                     : GridView.builder(
                         padding: const EdgeInsets.only(top: 8, bottom: 12),

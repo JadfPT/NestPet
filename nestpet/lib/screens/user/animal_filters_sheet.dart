@@ -10,7 +10,7 @@ class AnimalFiltersSheet extends StatefulWidget {
   final String? initialCor;
   final double? initialPesoMin;
   final double? initialPesoMax;
-  final String? initialCaracteristicas;
+  
 
   const AnimalFiltersSheet({
     super.key,
@@ -22,7 +22,6 @@ class AnimalFiltersSheet extends StatefulWidget {
     this.initialCor,
     this.initialPesoMin,
     this.initialPesoMax,
-    this.initialCaracteristicas,
   });
 
   @override
@@ -38,7 +37,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
   // selected color tags for filters (stored as CSV when applying)
   final Set<String> _selectedColors = {};
   bool _showColorChips = false;
-  final TextEditingController caracteristicasController = TextEditingController();
+  
   RangeValues peso = const RangeValues(0, 40);
 
   @override
@@ -52,7 +51,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
     // parse initialCor CSV into selected set
     final initialCor = widget.initialCor ?? '';
     _selectedColors.addAll(initialCor.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
-    caracteristicasController.text = widget.initialCaracteristicas ?? '';
+    
     final min = widget.initialPesoMin ?? 0.0;
     final max = widget.initialPesoMax ?? 40.0;
     peso = RangeValues(min, max);
@@ -103,7 +102,8 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                             IconButton(
                               icon: const Icon(Icons.delete_outline),
                               tooltip: 'Limpar filtros',
-                              onPressed: () => setState(() {
+                              onPressed: () {
+                                // Clear local state and immediately return empty filters
                                 tipo = null;
                                 tamanho = null;
                                 idade = 60;
@@ -111,9 +111,18 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                                 vacinado = null;
                                 _selectedColors.clear();
                                 _showColorChips = false;
-                                caracteristicasController.text = '';
                                 peso = const RangeValues(0, 40);
-                              }),
+                                Navigator.of(context).pop({
+                                  'tipo': null,
+                                  'tamanho': null,
+                                  'idade': 60,
+                                  'sexo': null,
+                                  'vacinado': null,
+                                  'cor': null,
+                                  'pesoMin': 0,
+                                  'pesoMax': 40,
+                                });
+                              },
                             ),
                           ],
                         ),
@@ -205,9 +214,9 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ),
                         ]),
                         const SizedBox(height: 8),
-                        TextField(controller: caracteristicasController, decoration: const InputDecoration(labelText: 'Características '), onChanged: (_) => setState(() {})),
+                        // Características field removed per design decision.
                         const SizedBox(height: 12),
-                        SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop({'tipo': tipo, 'tamanho': tamanho, 'idade': idade.round(), 'sexo': sexo, 'vacinado': vacinado, 'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','), 'pesoMin': peso.start.round(), 'pesoMax': peso.end.round(), 'caracteristicas': caracteristicasController.text.trim().isEmpty ? null : caracteristicasController.text.trim()}), child: const Text('Aplicar'))),
+                        SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop({'tipo': tipo, 'tamanho': tamanho, 'idade': idade.round(), 'sexo': sexo, 'vacinado': vacinado, 'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','), 'pesoMin': peso.start.round(), 'pesoMax': peso.end.round()}), child: const Text('Aplicar'))),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -223,7 +232,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
 
   @override
   void dispose() {
-    caracteristicasController.dispose();
+    // caracteristicasController.dispose(); // Removed as the controller is no longer needed
     super.dispose();
   }
 }

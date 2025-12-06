@@ -27,7 +27,6 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   String? cor;
   int? pesoMin;
   int? pesoMax;
-  String? caracteristicas;
 
   void _openActions(BuildContext context, Animal a) {
     showModalBottomSheet(
@@ -147,7 +146,6 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
           initialCor: cor,
           initialPesoMin: pesoMin?.toDouble(),
           initialPesoMax: pesoMax?.toDouble(),
-          initialCaracteristicas: caracteristicas,
         ),
       );
       if (res != null && mounted) {
@@ -160,7 +158,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
           cor = res['cor'] as String?;
           pesoMin = res['pesoMin'] as int?;
           pesoMax = res['pesoMax'] as int?;
-          caracteristicas = res['caracteristicas'] as String?;
+          // caracteristicas removed from filters
         });
         // debug feedback
         // ignore: avoid_print
@@ -186,7 +184,6 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
       cor = null;
       pesoMin = null;
       pesoMax = null;
-      caracteristicas = null;
     });
   }
 
@@ -194,7 +191,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final base = app.animals.all();
-    final items = base.where((a) {
+      final items = base.where((a) {
       if (tipo != null && tipo!.isNotEmpty && a.tipo != tipo) return false;
       if (tamanho != null && tamanho!.isNotEmpty && a.tamanho != tamanho) return false;
       if (idadeMax != null && a.idadeMeses > idadeMax!) return false;
@@ -203,13 +200,6 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
       if (cor != null && cor!.isNotEmpty && !a.cor.toLowerCase().contains(cor!.toLowerCase())) return false;
       if (pesoMin != null && a.pesoKg < pesoMin!) return false;
       if (pesoMax != null && a.pesoKg > pesoMax!) return false;
-      if (caracteristicas != null && caracteristicas!.isNotEmpty) {
-        final k = caracteristicas!.toLowerCase();
-        final inNome = a.nome.toLowerCase().contains(k);
-        final inDesc = a.descricao.toLowerCase().contains(k);
-        final inCar = a.caracteristicas.toLowerCase().contains(k);
-        if (!(inNome || inDesc || inCar)) return false;
-      }
       return true;
     }).toList();
 
@@ -222,7 +212,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
         ),
         title: Text('Os seus animais', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
         actions: [
-          if ([tipo, tamanho, idadeMax, sexo, vacinado, cor, pesoMin, pesoMax, caracteristicas].any((e) => e != null))
+          if ([tipo, tamanho, idadeMax, sexo, vacinado, cor, pesoMin, pesoMax].any((e) => e != null))
             IconButton(
               icon: Icon(Icons.clear, color: Theme.of(context).colorScheme.onPrimary),
               tooltip: 'Limpar filtros',
