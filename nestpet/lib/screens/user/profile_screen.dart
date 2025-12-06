@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_state.dart';
 import '../../services/session_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -41,14 +42,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void _contactSupport() {
-    showDialog<void>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Contactar Suporte'),
-        content: const Text('Envia um email para suporte@exemplo.com ou descreve o problema. (Placeholder)'),
-        actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Fechar'))],
-      ),
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'suporte@exemplo.com',
+      queryParameters: {
+        'subject': 'Suporte NestPet',
+      },
     );
+    launchUrl(emailUri);
   }
 
   @override
@@ -231,7 +232,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       final ok = await _confirm(context, 'Terminar sessão', 'Queres mesmo terminar a sessão?');
                       if (ok == true) {
                         context.read<AppState>().logout();
-                        if (context.mounted) context.go('/');
+                        if (context.mounted) context.go('/welcome');
                       }
                     },
                   ),

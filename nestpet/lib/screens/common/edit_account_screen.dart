@@ -148,6 +148,49 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     if (ok != true) return;
 
     final client = Supabase.instance.client;
+    // Ask for password to confirm identity before deleting account
+    final password = await showDialog<String?>(
+      context: context,
+      builder: (c) {
+        final TextEditingController pwdCtrl = TextEditingController();
+        return AlertDialog(
+          title: const Text('Confirma a password'),
+          content: TextField(
+            controller: pwdCtrl,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Password'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, null), child: const Text('Cancelar')),
+            FilledButton(onPressed: () => Navigator.pop(c, pwdCtrl.text), child: const Text('Confirmar')),
+          ],
+        );
+      },
+    );
+    if (password == null || password.isEmpty) return;
+
+    // Re-authenticate by signing in with email + password. If this fails,
+    // abort the delete operation.
+    final email = client.auth.currentUser?.email;
+    if (email == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro: utilizador não autenticado')));
+      return;
+    }
+    try {
+      // Attempt sign-in with password to verify credentials. This will replace
+      // the current session with a fresh session if successful, which is fine
+      // since we're about to remove the account.
+      await client.auth.signInWithPassword(email: email, password: password);
+      // Confirm session updated
+      final currentEmail = client.auth.currentUser?.email;
+      if (currentEmail == null || currentEmail != email) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password inválida')));
+        return;
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password inválida')));
+      return;
+    }
     // Try calling the server-side RPC which deletes the authenticated user's data
     // and the corresponding auth.users entry. This function must be created in
     // Supabase SQL Editor as an admin (see db/migrations/0003_remove_account_rpc.sql).

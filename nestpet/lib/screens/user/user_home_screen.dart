@@ -210,13 +210,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Title row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Animais disponíveis', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),
-                  const SizedBox.shrink(),
-                ],
+              // Title row (centered)
+              Center(
+                child: Text(
+                  'Animais disponíveis',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
 

@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../app_router.dart';
 import '../../services/auth_service.dart';
-import 'package:provider/provider.dart';
-import '../../providers/app_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterUserScreen extends StatefulWidget {
   const RegisterUserScreen({super.key});
@@ -20,6 +19,8 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
   final _auth = AuthService();
   bool _loading = false;
 
+  bool _obscurePass = true;
+  bool _obscureConfirm = true;
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -27,16 +28,29 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     final pass = _passCtrl.text;
     String? message;
     try {
-      await _auth.signUpEmail(email, pass);
-      final user = _auth.currentUser();
-      if (user == null) {
-        message = 'Registo efetuado. Verifique o seu email para confirmar a conta.';
-      } else {
-        // Automatically log in and navigate to user home
-        final app = context.read<AppState>();
-        app.login(UserRole.user);
-        router.go('/u/home');
+      final res = await _auth.signUpEmail(email, pass);
+      final userId = res.user?.id ?? Supabase.instance.client.auth.currentUser?.id;
+
+      // Insert pending registration record so server-side logic can handle
+      // account activation only after email confirmation.
+      try {
+        await Supabase.instance.client.from('pending_registrations').insert({
+          'email': email,
+          'role': 'user',
+        });
+      } catch (_) {}
+
+      // If a profile row was created by a DB trigger, remove it so the
+      // account lives in `pending_registrations` until confirmed.
+      if (userId != null) {
+        try {
+          await Supabase.instance.client.from('profiles').delete().eq('id', userId);
+        } catch (_) {}
       }
+
+      // After signup redirect to login so user can confirm and sign in.
+      router.go('/');
+      message = 'Registo efetuado. Verifique o seu email para confirmar a conta.';
     } catch (e) {
       message = e.toString();
     } finally {
@@ -115,8 +129,12 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                                 fillColor: colors.background,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscurePass ? Icons.visibility_off : Icons.visibility),
+                                  onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                                ),
                               ),
-                              obscureText: true,
+                              obscureText: _obscurePass,
                               validator: (v) => (v == null || v.length < 6) ? 'Password min 6' : null,
                             ),
                             const SizedBox(height: 12),
@@ -128,8 +146,12 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                                 fillColor: colors.background,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                                ),
                               ),
-                              obscureText: true,
+                              obscureText: _obscureConfirm,
                               validator: (v) => (v == null || v != _passCtrl.text) ? 'As passwords não coincidem' : null,
                             ),
                             const SizedBox(height: 18),

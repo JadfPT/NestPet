@@ -14,7 +14,7 @@ import 'screens/auth/register_org_screen.dart';
 import 'screens/user/user_home_screen.dart';
 import 'screens/user/user_favorites_screen.dart';
 import 'screens/user/profile_screen.dart';
-import 'screens/user/edit_account_screen.dart';
+import 'screens/common/edit_account_screen.dart';
 import 'screens/user/animal_detail_screen.dart';
 import 'screens/user/chat_screen.dart';
 import 'screens/common/messages_screen.dart';

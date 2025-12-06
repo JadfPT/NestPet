@@ -4,21 +4,8 @@ import '../../app_router.dart';
 import '../../services/auth_service.dart';
 import '../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:provider/provider.dart';
-import '../../providers/app_state.dart';
 
-bool _validateNIFLocal(String nif) {
-  // NIF (Portugal) validation: 9 digits, checksum on first 8 digits
-  if (!RegExp(r'^\d{9}$').hasMatch(nif)) return false;
-  final digits = nif.split('').map(int.parse).toList();
-  final weights = [9, 8, 7, 6, 5, 4, 3, 2];
-  var sum = 0;
-  for (var i = 0; i < 8; i++) { sum += digits[i] * weights[i]; }
-  final remainder = sum % 11;
-  var check = 11 - remainder;
-  if (check >= 10) check = 0;
-  return check == digits[8];
-}
+
 
 class RegisterOrgScreenFixed extends StatefulWidget {
   const RegisterOrgScreenFixed({super.key});
@@ -36,6 +23,8 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
   final _nifCtrl = TextEditingController();
   final _auth = AuthService();
   bool _loading = false;
+  bool _obscurePass = true;
+  bool _obscureConfirm = true;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -45,8 +34,10 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
     final nif = _nifCtrl.text.trim();
     String? message;
     try {
-      if (!_validateNIFLocal(nif)) throw Exception('NIF inválido');
-      await _auth.signUpEmail(email, pass);
+      // Basic checks first: length and starting digit (no checksum required)
+      if (!RegExp(r'^\d{9}$').hasMatch(nif)) throw Exception('NIF deve ter 9 dígitos');
+      if (!RegExp(r'^[56]').hasMatch(nif)) throw Exception('NIF deve começar por 5 ou 6');
+      final res = await _auth.signUpEmail(email, pass);
       // Persist desired role locally so after email confirmation + login
       // the AppState can fall back to this saved role if server metadata
       // is not present.
@@ -60,7 +51,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
       // attempt to persist the role immediately server-side so other
       // devices will see it.
       try {
-        final user = Supabase.instance.client.auth.currentUser;
+        final user = res.user ?? Supabase.instance.client.auth.currentUser;
         if (user != null) {
           // Update auth user metadata
           try {
@@ -78,6 +69,11 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
             // If successful, clear local org info
             await SessionService.clearOrgInfo();
           } catch (_) {}
+          // If a profile row was created automatically by the DB trigger,
+          // remove it so the account remains pending until email confirmation.
+          try {
+            await Supabase.instance.client.from('profiles').delete().eq('id', user.id);
+          } catch (_) {}
         }
         // Also insert a pending registration record so the DB can later
         // associate the org to the auth user when the email is confirmed.
@@ -92,14 +88,10 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
           });
         } catch (_) {}
       } catch (_) {}
-      final user = _auth.currentUser();
-      if (user == null) {
-        message = 'Registo efetuado. Verifique o seu email para confirmar a conta.';
-      } else {
-        final app = context.read<AppState>();
-        app.login(UserRole.org);
-        router.go('/o/home');
-      }
+      // After registering, always redirect the user to the login screen so
+      // they can confirm the email and sign in.
+      router.go('/');
+      message = 'Registo efetuado. Verifique o seu email para confirmar a conta.';
     } catch (e) {
       message = e.toString();
     } finally {
@@ -190,8 +182,12 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                                 fillColor: colors.background,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscurePass ? Icons.visibility_off : Icons.visibility),
+                                  onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                                ),
                               ),
-                              obscureText: true,
+                              obscureText: _obscurePass,
                               validator: (v) => (v == null || v.length < 6) ? 'Password min 6' : null,
                             ),
                             const SizedBox(height: 12),
@@ -203,15 +199,19 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                                 fillColor: colors.background,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                                ),
                               ),
-                              obscureText: true,
+                              obscureText: _obscureConfirm,
                               validator: (v) => (v == null || v != _passCtrl.text) ? 'As passwords não coincidem' : null,
                             ),
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: _nifCtrl,
                               decoration: InputDecoration(
-                                labelText: 'NIF (9 dígitos)',
+                                labelText: 'NIF',
                                 filled: true,
                                 fillColor: colors.background,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
@@ -220,7 +220,10 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                               keyboardType: TextInputType.number,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) return 'NIF requerido';
-                                if (!_validateNIFLocal(v.trim())) return 'NIF inválido';
+                                final t = v.trim();
+                                if (t.length != 9) return 'NIF deve ter 9 dígitos';
+                                if (!RegExp(r'^\d{9}$').hasMatch(t)) return 'NIF inválido';
+                                if (!(t.startsWith('5') || t.startsWith('6'))) return 'NIF deve começar por 5 ou 6';
                                 return null;
                               },
                             ),

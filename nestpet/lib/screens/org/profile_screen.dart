@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_state.dart';
 import 'edit_org_screen.dart';
-import '../user/edit_account_screen.dart';
+import '../common/edit_account_screen.dart';
 
 class OrgProfileScreen extends StatelessWidget {
   const OrgProfileScreen({super.key});
@@ -24,6 +25,15 @@ class OrgProfileScreen extends StatelessWidget {
       final org = await Supabase.instance.client.from('organizations').select().eq('user_id', user.id).maybeSingle();
       return org;
     }();
+
+    void contactSupport() {
+      final Uri emailUri = Uri(
+        scheme: 'mailto',
+        path: 'suporte@exemplo.com',
+        queryParameters: {'subject': 'Suporte NestPet'},
+      );
+      launchUrl(emailUri);
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text('Perfil', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
@@ -79,6 +89,7 @@ class OrgProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
 
           const SizedBox(height: 16),
           Padding(
@@ -174,11 +185,18 @@ class OrgProfileScreen extends StatelessWidget {
                           ),
                           const Divider(height: 1),
                           ListTile(
+                            leading: const Icon(Icons.support_agent_outlined),
+                            title: const Text('Contactar suporte'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: contactSupport,
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
                             leading: const Icon(Icons.logout),
                             title: const Text('Terminar sessão'),
                             onTap: () {
                               context.read<AppState>().logout();
-                              context.go('/');
+                              context.go('/welcome');
                             },
                           ),
                         ],
@@ -186,6 +204,21 @@ class OrgProfileScreen extends StatelessWidget {
                     },
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('App', style: Theme.of(context).textTheme.titleSmall)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('Versão'),
+                subtitle: const Text('1.0.0'),
+                onTap: () {},
               ),
             ),
           ),
