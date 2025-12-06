@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:math' as math;
 
 import '../../providers/app_state.dart';
 import '../widgets/animal_grid_card.dart';
@@ -64,7 +65,9 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
 
   void _insertFabOverlay() {
     final overlay = Overlay.of(context);
-    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final bottomInsetRaw = MediaQuery.of(context).viewPadding.bottom;
+    // Use full safe-area inset with a small minimum to match earlier layout
+    final bottomInset = math.max(bottomInsetRaw, 16.0);
     // If inset didn't change and overlay exists, keep it
     if (_fabOverlay != null && _lastFabBottomInset == bottomInset) return;
 
@@ -72,24 +75,26 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
     _fabOverlay?.remove();
 
     _fabOverlay = OverlayEntry(builder: (ctx) {
-      final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+      final bottomInsetRaw = MediaQuery.of(context).viewPadding.bottom;
+      final bottomInset = math.max(bottomInsetRaw, 16.0);
       final primary = Theme.of(context).colorScheme.primary;
-      const pillHeight = 58.0;
-      const fabSize = 56.0;
+      // constants removed; use inline sizes
 
-      // small adjustable offset to tweak how far above the pill the FAB sits
-      const fabVerticalAdjustment = -115; // negative -> moves FAB lower on screen
+      // compute pill bottom (distance from bottom) — matches pill Positioned(bottom: bottomInset + 8)
+      final pillBottom = bottomInset + 8;
+      // place the FAB so it slightly overlaps the pill (closer attachment)
+      final desiredFabBottom = pillBottom - 24.0;
 
       return Positioned(
         right: 28,
-        bottom: bottomInset + pillHeight + 12 + fabVerticalAdjustment,
+        bottom: desiredFabBottom,
         child: Material(
           color: Colors.transparent,
           child: GestureDetector(
             onTap: () => context.go('/messages'),
-            child: Container(
-              width: fabSize,
-              height: fabSize,
+              child: Container(
+              width: 56.0,
+              height: 56.0,
               decoration: BoxDecoration(
                 color: primary,
                 shape: BoxShape.circle,

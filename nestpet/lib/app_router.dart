@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 
 import 'providers/app_state.dart';
 
@@ -35,7 +36,12 @@ class _UserShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     const pillHeight = 58.0;
-    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    // Prefer the safe-area padding, but ensure a small minimum so the pill
+    // doesn't sit flush with the very bottom on gesture-based devices.
+    final rawBottom = MediaQuery.of(context).viewPadding.bottom;
+    // Use the full safe-area inset but keep a reasonable minimum so the
+    // pill doesn't overlap interactive system areas on gesture devices.
+    final bottomInset = math.max(rawBottom, 16.0);
 
     return Scaffold(
       body: Stack(
@@ -114,7 +120,10 @@ class _OrgShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     const pillHeight = 58.0;
-    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    // Prefer the safe-area padding, but ensure a small minimum so the pill
+    // doesn't sit flush with the very bottom on gesture-based devices.
+    final rawBottom = MediaQuery.of(context).viewPadding.bottom;
+    final bottomInset = math.max(rawBottom, 16.0);
 
     return Scaffold(
       body: Stack(
