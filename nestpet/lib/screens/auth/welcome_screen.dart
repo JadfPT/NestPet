@@ -61,7 +61,7 @@ class WelcomeScreen extends StatelessWidget {
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             foregroundColor: primary,
-                            side: BorderSide(color: primary.withOpacity(0.9)),
+                            side: BorderSide(color: primary.withAlpha((0.9*255).round())),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
@@ -80,7 +80,7 @@ class WelcomeScreen extends StatelessWidget {
                             app.login(UserRole.user);
                             router.go('/u/home');
                           },
-                          child: Text('Entrar como Convidado', style: TextStyle(color: primary.withOpacity(0.9))),
+                          child: Text('Entrar como Convidado', style: TextStyle(color: primary.withAlpha((0.9*255).round()))),
                         ),
                       ),
                     ],

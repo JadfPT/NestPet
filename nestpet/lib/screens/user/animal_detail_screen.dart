@@ -76,8 +76,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                   if (loadingProgress == null) return child;
                   return const Center(child: CircularProgressIndicator());
                 },
-                errorBuilder: (_, __, ___) =>
-                    const ColoredBox(color: Colors.black12),
+                errorBuilder: (context, error, stackTrace) =>
+                  const ColoredBox(color: Colors.black12),
               );
             }
             return Image.file(File(m.path), fit: BoxFit.cover);
@@ -366,7 +366,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     Animal animal,
     Color primary,
   ) {
-    final accent = primary.withOpacity(0.85);
+    final accent = primary.withAlpha((0.85*255).round());
 
     // Campos opcionais: só usa se existirem na classe Animal.
     bool? vacinado;
@@ -419,7 +419,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: primary.withOpacity(0.5)),
+        side: BorderSide(color: primary.withAlpha((0.5*255).round())),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

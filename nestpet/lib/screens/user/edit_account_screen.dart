@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -156,7 +158,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       final rpcRes = await client.rpc('remove_account_and_data').select();
       // rpcRes might be a PostgrestResponse or dynamic. Check for an error
       // in a defensive way and run fallback if present.
-      var rpcError;
+      dynamic rpcError;
       try {
         rpcError = (rpcRes as dynamic).error;
       } catch (_) {
@@ -222,6 +224,8 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
     final display = user?.userMetadata?['displayName'] ?? user?.userMetadata?['name'] ?? '';
 
+    // WillPopScope deprecated; suppress info until further migration to PopScope
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         final current = _nameCtrl.text.trim();

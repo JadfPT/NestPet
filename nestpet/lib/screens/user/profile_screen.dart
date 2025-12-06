@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -83,7 +85,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       final imageProvider = (avatarUrl != null) ? NetworkImage(avatarUrl) : null;
                       return CircleAvatar(
                         radius: 28,
-                        backgroundColor: primary.withOpacity(0.18),
+                        backgroundColor: primary.withAlpha((0.18*255).round()),
                         foregroundImage: imageProvider as ImageProvider<Object>?,
                         child: imageProvider == null ? Text(display.isNotEmpty ? display[0].toUpperCase() : 'U', style: TextStyle(color: primary, fontWeight: FontWeight.w700, fontSize: 20)) : null,
                       );

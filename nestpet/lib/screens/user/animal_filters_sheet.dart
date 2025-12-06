@@ -78,8 +78,8 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-              border: Border.all(color: primary.withOpacity(0.18), width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)],
+              border: Border.all(color: primary.withAlpha((0.18*255).round()), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.06*255).round()), blurRadius: 10)],
             ),
             child: Column(
               children: [
@@ -87,7 +87,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                 Padding(
                   padding: const EdgeInsets.only(top: 10, bottom: 6),
                   child: Center(
-                    child: Container(width: 36, height: 4, decoration: BoxDecoration(color: primary.withOpacity(0.22), borderRadius: BorderRadius.circular(4))),
+                    child: Container(width: 36, height: 4, decoration: BoxDecoration(color: primary.withAlpha((0.22*255).round()), borderRadius: BorderRadius.circular(4))),
                   ),
                 ),
                 Expanded(
@@ -177,7 +177,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                               return FilterChip(
                                 label: Text(tag),
                                 selected: sel,
-                                selectedColor: primary.withOpacity(0.14),
+                                selectedColor: primary.withAlpha((0.14*255).round()),
                                 labelStyle: TextStyle(color: sel ? primary : null),
                                 onSelected: (v) => setState(() {
                                   if (v) {
@@ -199,7 +199,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: SliderTheme(
-                                data: SliderTheme.of(context).copyWith(activeTrackColor: primary, thumbColor: primary, overlayColor: primary.withOpacity(0.12)),
+                                data: SliderTheme.of(context).copyWith(activeTrackColor: primary, thumbColor: primary, overlayColor: primary.withAlpha((0.12*255).round())),
                                 child: Slider(value: idade, min: 2, max: 120, divisions: 59, label: idade.round().toString(), onChanged: (v) => setState(() => idade = v)),
                               ),
                             ),
@@ -209,7 +209,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           const Text('Peso (kg)'),
                           SliderTheme(
-                            data: SliderTheme.of(context).copyWith(activeTrackColor: primary, thumbColor: primary, overlayColor: primary.withOpacity(0.12)),
+                            data: SliderTheme.of(context).copyWith(activeTrackColor: primary, thumbColor: primary, overlayColor: primary.withAlpha((0.12*255).round())),
                             child: RangeSlider(values: peso, min: 0, max: 100, divisions: 100, labels: RangeLabels(peso.start.round().toString(), peso.end.round().toString()), onChanged: (v) => setState(() => peso = v)),
                           ),
                         ]),

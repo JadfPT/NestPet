@@ -19,48 +19,7 @@ class EditAnimalScreen extends StatefulWidget {
   State<EditAnimalScreen> createState() => _EditAnimalScreenState();
 }
 
-class _EditColorChips extends StatefulWidget {
-  final String? initialValue;
-  final ValueChanged<Set<String>>? onChanged;
-  const _EditColorChips({this.initialValue, this.onChanged});
-
-  @override
-  State<_EditColorChips> createState() => _EditColorChipsState();
-}
-
-class _EditColorChipsState extends State<_EditColorChips> {
-  late final Set<String> _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    final init = widget.initialValue ?? '';
-    _selected = init.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
-  }
-
-  void _toggle(String tag, bool value) {
-    setState(() {
-      if (value) {
-        _selected.add(tag);
-      } else {
-        _selected.remove(tag);
-      }
-    });
-    widget.onChanged?.call(_selected);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: kCommonColorTags.map((tag) {
-        final sel = _selected.contains(tag);
-        return FilterChip(label: Text(tag), selected: sel, onSelected: (v) => _toggle(tag, v));
-      }).toList(),
-    );
-  }
-}
+// color chips widget removed; edit screen now manages color chips inline
 
 class _EditAnimalScreenState extends State<EditAnimalScreen> {
   final form = GlobalKey<FormState>();
@@ -229,7 +188,11 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
                     label: Text(tag),
                     selected: selected,
                     onSelected: (v) => setState(() {
-                      if (v) _selectedColors.add(tag); else _selectedColors.remove(tag);
+                      if (v) {
+                        _selectedColors.add(tag);
+                      } else {
+                        _selectedColors.remove(tag);
+                      }
                     }),
                   );
                 }).toList(),

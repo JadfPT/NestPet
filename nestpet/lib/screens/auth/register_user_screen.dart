@@ -153,7 +153,7 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                             // Secondary option: create as institution
                             TextButton(
                               onPressed: () => router.go('/register/org'),
-                              child: Text('Criar como Instituição', style: TextStyle(color: primary.withOpacity(0.9))),
+                              child: Text('Criar como Instituição', style: TextStyle(color: primary.withAlpha((0.9*255).round()))),
                             ),
                           ],
                         ),

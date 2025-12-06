@@ -56,7 +56,7 @@ class _UserShell extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: primary,
                   borderRadius: BorderRadius.circular(28),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: Offset(0,6))],
+                  boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.12*255).round()), blurRadius: 12, offset: Offset(0,6))],
                 ),
                 child: Builder(builder: (ctx) {
                   final loc = location;
@@ -134,7 +134,7 @@ class _OrgShell extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: primary,
                   borderRadius: BorderRadius.circular(28),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: Offset(0,6))],
+                  boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.12*255).round()), blurRadius: 12, offset: Offset(0,6))],
                 ),
                 child: Builder(builder: (ctx) {
                   final loc = location;
@@ -188,34 +188,34 @@ final router = GoRouter(
   navigatorKey: _rootKey,
   initialLocation: '/welcome',
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
-    GoRoute(path: '/welcome', builder: (_, __) => const WelcomeScreen()),
-    GoRoute(path: '/register/user', builder: (_, __) => const RegisterUserScreen()),
-    GoRoute(path: '/register/org', builder: (_, __) => const RegisterOrgScreenFixed()),
-    GoRoute(path: '/messages', builder: (_, __) => const MessagesScreen()),
+  GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
+  GoRoute(path: '/welcome', builder: (context, state) => const WelcomeScreen()),
+  GoRoute(path: '/register/user', builder: (context, state) => const RegisterUserScreen()),
+  GoRoute(path: '/register/org', builder: (context, state) => const RegisterOrgScreenFixed()),
+  GoRoute(path: '/messages', builder: (context, state) => const MessagesScreen()),
     // '/auth/reset' route removed — password reset by email disabled
 
     // USER (shell)
     ShellRoute(
       navigatorKey: _userShellKey,
-      builder: (_, state, child) => _UserShell(child: child, location: state.fullPath ?? '/'),
+      builder: (context, state, child) => _UserShell(location: state.fullPath ?? '/', child: child),
       routes: [
-        GoRoute(path: '/u/home', builder: (_, __) => const UserHomeScreen()),
-        GoRoute(path: '/u/favorites', builder: (_, __) => const UserFavoritesScreen()),
-        GoRoute(path: '/u/profile', builder: (_, __) => const UserProfileScreen()),
-        GoRoute(path: '/u/edit', builder: (_, __) => const EditAccountScreen()),
+        GoRoute(path: '/u/home', builder: (context, state) => const UserHomeScreen()),
+        GoRoute(path: '/u/favorites', builder: (context, state) => const UserFavoritesScreen()),
+        GoRoute(path: '/u/profile', builder: (context, state) => const UserProfileScreen()),
+        GoRoute(path: '/u/edit', builder: (context, state) => const EditAccountScreen()),
       ],
     ),
 
     // ORG (shell)
     ShellRoute(
       navigatorKey: _orgShellKey,
-      builder: (_, state, child) => _OrgShell(child: child, location: state.fullPath ?? '/'),
+      builder: (context, state, child) => _OrgShell(location: state.fullPath ?? '/', child: child),
       routes: [
-        GoRoute(path: '/o/home', builder: (_, __) => const MyAnimalsScreen()),
-        GoRoute(path: '/o/add', builder: (_, __) => const AddAnimalScreen()),
+        GoRoute(path: '/o/home', builder: (context, state) => const MyAnimalsScreen()),
+        GoRoute(path: '/o/add', builder: (context, state) => const AddAnimalScreen()),
         GoRoute(path: '/o/edit/:id', builder: (ctx, st) => EditAnimalScreen(id: st.pathParameters['id']!)),
-        GoRoute(path: '/o/profile', builder: (_, __) => const OrgProfileScreen()),
+        GoRoute(path: '/o/profile', builder: (context, state) => const OrgProfileScreen()),
       ],
     ),
 

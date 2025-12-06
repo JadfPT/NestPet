@@ -1,4 +1,6 @@
 import 'dart:io';
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
@@ -171,6 +173,8 @@ class _EditUserScreenState extends State<EditUserScreen> {
     final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
     final display = user?.userMetadata?['displayName'] ?? user?.userMetadata?['name'] ?? '';
 
+    // WillPopScope deprecated; suppress info until further migration to PopScope
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(

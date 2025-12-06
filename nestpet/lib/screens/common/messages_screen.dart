@@ -138,7 +138,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               : ListView.separated(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   itemCount: _list.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (ctx, i) {
                     final c = _list[i];
                     return InkWell(
@@ -160,7 +160,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               decoration: BoxDecoration(
                                 color: brand,
                                 shape: BoxShape.circle,
-                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)],
+                                boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.06*255).round()), blurRadius: 4)],
                               ),
                               child: Center(child: Icon(Icons.person, color: bg)),
                             ),
@@ -173,7 +173,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      Icon(Icons.done_all, size: 16, color: brand.withOpacity(0.9)),
+                                      Icon(Icons.done_all, size: 16, color: brand.withAlpha((0.9*255).round())),
                                       const SizedBox(width: 6),
                                       Expanded(child: Text(c.lastMessage, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54))),
                                     ],

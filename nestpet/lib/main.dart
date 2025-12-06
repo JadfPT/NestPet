@@ -131,13 +131,13 @@ class NestPetApp extends StatelessWidget {
                 if (states.contains(WidgetState.selected)) {
                   return IconThemeData(color: colorScheme.surface);
                 }
-                return IconThemeData(color: colorScheme.primary.withOpacity(0.95));
+                return IconThemeData(color: colorScheme.primary.withAlpha((0.95*255).round()));
               }),
               labelTextStyle: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
                   return TextStyle(color: colorScheme.surface);
                 }
-                return TextStyle(color: colorScheme.primary.withOpacity(0.95));
+                return TextStyle(color: colorScheme.primary.withAlpha((0.95*255).round()));
               }),
             ),
           ),

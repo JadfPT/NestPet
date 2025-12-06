@@ -45,6 +45,7 @@ dependencies:
   url_launcher: ^6.1.12
   # Deep link handling
   # (removed `app_links` and `http` — not needed since email/deep-link reset was disabled)
+  http: ^0.13.6
 
 dev_dependencies:
   flutter_test:

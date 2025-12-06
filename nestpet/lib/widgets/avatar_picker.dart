@@ -79,7 +79,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
           Container(
             width: radius * 0.5,
             height: radius * 0.5,
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 4)]),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.12*255).round()), blurRadius: 4)]),
             child: Icon(Icons.edit, size: radius * 0.35, color: Colors.white),
           )
         ],

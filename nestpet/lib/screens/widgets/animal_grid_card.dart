@@ -45,8 +45,8 @@ class AnimalGridCard extends StatelessWidget {
                 margin: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: primary.withOpacity(0.9), width: 1.2),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6, offset: Offset(0, 3))],
+                  border: Border.all(color: primary.withAlpha((0.9*255).round()), width: 1.2),
+                  boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.06*255).round()), blurRadius: 6, offset: Offset(0, 3))],
                 ),
                 child: ClipRRect(borderRadius: BorderRadius.circular(10), child: media()),
               ),
@@ -94,9 +94,9 @@ class AnimalGridCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                   constraints: const BoxConstraints(minHeight: 40),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withOpacity(0.75),
+                    color: Theme.of(context).colorScheme.surface.withAlpha((0.75*255).round()),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: primary.withOpacity(0.9)),
+                    border: Border.all(color: primary.withAlpha((0.9*255).round())),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

@@ -127,14 +127,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
-                          Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withOpacity(0.9)),
+                          Icon(Icons.search, color: Theme.of(context).colorScheme.primary.withAlpha((0.9*255).round())),
                           const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               controller: _searchController,
                               decoration: InputDecoration.collapsed(
                                 hintText: 'Pesquisar',
-                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withOpacity(0.6)),
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withAlpha((0.6*255).round())),
                               ),
                               onChanged: (q) {
                                 setState(() {
@@ -152,7 +152,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                   _query = '';
                                 });
                               },
-                              child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary.withOpacity(0.7)),
+                              child: Icon(Icons.close, color: Theme.of(context).colorScheme.primary.withAlpha((0.7*255).round())),
                             ),
                         ],
                       ),
@@ -179,7 +179,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: Offset(0,2))],
+                            boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.08*255).round()), blurRadius: 4, offset: Offset(0,2))],
                           ),
                           child: CircleAvatar(
                             radius: 18,
@@ -196,7 +196,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: Offset(0,2)),
+                            BoxShadow(color: Colors.black.withAlpha((0.08*255).round()), blurRadius: 4, offset: Offset(0,2)),
                           ],
                         ),
                         child: Center(

@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -84,14 +86,14 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
                         children: [
                           Text(
                             '${m.sentAt.hour.toString().padLeft(2, '0')}:${m.sentAt.minute.toString().padLeft(2, '0')}',
-                            style: TextStyle(color: isOrg ? Colors.white70 : brand.withOpacity(0.8), fontSize: 12),
+                            style: TextStyle(color: isOrg ? Colors.white70 : brand.withAlpha((0.8*255).round()), fontSize: 12),
                           ),
                           const SizedBox(width: 8),
                           if (m.from == 'org')
                             Icon(
                               m.isRead ? Icons.done_all : Icons.check,
                               size: 14,
-                              color: isOrg ? Colors.white70 : brand.withOpacity(0.8),
+                              color: isOrg ? Colors.white70 : brand.withAlpha((0.8*255).round()),
                             ),
                         ],
                       ),
