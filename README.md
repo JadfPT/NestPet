@@ -72,20 +72,23 @@ lib/
 ├── main.dart                    # Ponto de entrada da aplicação
 ├── app_router.dart              # Configuração de rotas (GoRouter)
 ├── supabase_config.dart         # Configuração do cliente Supabase
+├── assets/
+│   ├── NestPet_Icon.png
+│   └── NestPet_logo.png
 │
 ├── models/                      # Modelos de dados
 │   ├── animal.dart              # Modelo Animal (espécie, raça, idade, etc.)
-│   ├── message.dart             # Modelo Message (chat)
-│   └── organization.dart        # Modelo Organization
+│   └── message.dart             # Modelo Message (chat)
 │
 ├── providers/                   # Gestão de estado (Provider)
 │   └── app_state.dart           # Estado global (auth, animais, favoritos)
 │
 ├── data/                        # Repositórios de dados
+│   ├── animal_repository.dart             # Interface base de animais
+│   ├── storage_repository.dart            # Upload de media
 │   ├── supabase_animal_repository.dart    # CRUD de animais
 │   ├── supabase_chat_repository.dart      # Chat em tempo real
-│   ├── supabase_favorites_repository.dart # Sistema de favoritos
-│   └── storage_repository.dart            # Upload de media
+│   └── supabase_favorites_repository.dart # Sistema de favoritos
 │
 ├── services/                    # Serviços auxiliares
 │   ├── session_service.dart     # Persistência de sessão local
@@ -102,12 +105,12 @@ lib/
 │   │   ├── user_home_screen.dart         # Home com grid de animais
 │   │   ├── animal_detail_screen.dart     # Detalhes do animal
 │   │   ├── animal_filters_sheet.dart     # Bottom sheet de filtros
-│   │   ├── favorites_screen.dart         # Lista de favoritos
+│   │   ├── user_favorites_screen.dart    # Lista de favoritos
 │   │   ├── profile_screen.dart           # Perfil do utilizador
 │   │   └── chat_screen.dart              # Chat com organização
 │   │
 │   ├── org/                     # Ecrãs de organização
-│   │   ├── org_home_screen.dart          # Home com animais da org
+│   │   ├── my_animals_screen.dart        # Lista/gestão de animais da org
 │   │   ├── add_animal_screen.dart        # Adicionar animal
 │   │   ├── edit_animal_screen.dart       # Editar animal
 │   │   ├── edit_org_screen.dart          # Editar dados da organização
@@ -115,21 +118,24 @@ lib/
 │   │   └── chat_screen.dart              # Chat com utilizadores
 │   │
 │   ├── common/                  # Ecrãs partilhados
-│   │   └── edit_account_screen.dart      # Editar nome/avatar
+│   │   ├── edit_account_screen.dart      # Editar nome/avatar
+│   │   └── messages_screen.dart          # Lista unificada de mensagens
 │   │
 │   └── widgets/                 # Widgets reutilizáveis
-│       └── animal_grid_card.dart         # Card de animal no grid
+│       ├── animal_grid_card.dart         # Card de animal no grid
+│       └── empty_state.dart             # Estado vazio genérico
 │
 ├── widgets/                     # Widgets globais
 │   ├── avatar_picker.dart       # Seletor de avatar com câmara/galeria
-│   └── media_gallery.dart       # Galeria de imagens/vídeos
+│   └── change_password_flow.dart # Fluxo de alteração de password
 │
 ├── utils/                       # Utilitários
 │   ├── color_tags.dart          # Lista de cores disponíveis
+│   ├── personality_tags.dart    # Lista de personalidades
 │   └── unsaved_changes_guard.dart # Sistema de avisos de alterações não guardadas
 │
 └── assets/                      # Recursos estáticos
-    └── (imagens, fontes, etc.)
+  └── (imagens, fontes, etc.)
 ```
 
 ### Pastas Fora de `lib/`
