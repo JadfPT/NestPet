@@ -12,7 +12,7 @@
 
 **NestPet** é uma aplicação móvel multiplataforma (Android, iOS, Web) que conecta pessoas interessadas em adotar animais com organizações de resgate e abrigos. A plataforma oferece:
 
-- 🔍 **Pesquisa avançada** com filtros como espécie, raça, idade, peso, cor, tamanho e estado de vacinação
+- 🔍 **Pesquisa avançada** com filtros como espécie, sexo, idade, peso, cor, tamanho e estado de vacinação
 - ⭐ **Sistema de favoritos** para guardar animais de interesse
 - 💬 **Chat em tempo real** entre utilizadores e organizações
 - 📸 **Galeria multimedia** com suporte a fotos e vídeos
@@ -41,7 +41,7 @@
 - ✏️ Editar informações de animais existentes
 - 🗑️ Remover animais já adotados
 - 💬 Comunicar com utilizadores interessados
-- 🏛️ Gestão de informações institucionais (morada, horários, contactos)
+- 🏛️ Gestão de informações institucionais (nome, morada, horários, contactos, website)
 - 📊 Visualizar todos os animais publicados pela organização
 
 ---
