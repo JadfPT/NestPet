@@ -48,6 +48,11 @@ class SupabaseAnimalRepository {
   /// Synchronous view of cached animals
   List<Animal> all() => List.unmodifiable(_cache);
 
+  /// Clear the cache (useful for logout)
+  void clear() {
+    _cache.clear();
+  }
+
   /// Filtered synchronous list (same signature as previous local repository)
   List<Animal> list({String? tipo, String? tamanho, int? idadeMaxMeses}) {
     return _cache.where((a) {

@@ -135,7 +135,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar animal')),
+      appBar: AppBar( title: Text('Adicionar animal', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
       body: SafeArea(
         child: Form(
           key: form,

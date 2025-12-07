@@ -75,6 +75,13 @@ class AppState extends ChangeNotifier {
     // persist role so it can be restored on app restart
     SessionService.saveRole(r == UserRole.org ? 'org' : 'user');
 
+    // refresh animals from server based on new role
+    animals.refresh().then((_) {
+      notifyListeners();
+    }).catchError((_) {
+      // ignore errors refreshing animals
+    });
+
     // refresh favorites from server for the logged-in user (background)
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
@@ -96,6 +103,11 @@ class AppState extends ChangeNotifier {
       Supabase.instance.client.auth.signOut().catchError((_) {});
     } catch (_) {}
     role = null;
+    
+      // Clear cached data to prevent showing previous user's data
+        animals.clear();
+      _favIds.clear();
+    
     displayName = null;
     SessionService.clearRole();
     notifyListeners();
