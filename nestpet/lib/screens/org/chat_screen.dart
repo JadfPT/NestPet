@@ -4,7 +4,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../providers/app_state.dart';
@@ -43,14 +42,6 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
         backgroundColor: brand,
         foregroundColor: bg,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () => context.go('/org'),
-            icon: const Icon(Icons.list_alt),
-            tooltip: 'Os seus animais',
-            color: Colors.white,
-          ),
-        ],
       ),
       body: Column(
         children: [
