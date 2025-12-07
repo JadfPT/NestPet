@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_state.dart';
-import '../../services/session_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -16,15 +15,9 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  bool _notificationsEnabled = true;
-
   @override
   void initState() {
     super.initState();
-    // load saved notifications preference
-    SessionService.loadNotificationsEnabled().then((v) {
-      if (v != null) setState(() => _notificationsEnabled = v);
-    }).catchError((_) {});
   }
 
   Future<bool?> _confirm(BuildContext ctx, String title, String body) {
@@ -143,7 +136,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               Text('Conta e perfil', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
                               Text('• Editar perfil: toca no botão de editar no topo do perfil para alterar o nome ou avatar.'),
-                              Text('• Notificações: ativa/desativa notificações nesta página.'),
                               SizedBox(height: 12),
                               Text('Dicas', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
@@ -155,19 +147,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Fechar'))],
                       ),
                     ),
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    value: _notificationsEnabled,
-                    onChanged: (v) async {
-                      setState(() => _notificationsEnabled = v);
-                      try {
-                        await SessionService.saveNotificationsEnabled(v);
-                      } catch (_) {}
-                    },
-                    secondary: const Icon(Icons.notifications_outlined),
-                    title: const Text('Notificações'),
-                    subtitle: const Text('Receber notificações relacionadas com animais e mensagens'),
                   ),
                   const Divider(height: 1),
                   ListTile(

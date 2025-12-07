@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../utils/unsaved_changes_guard.dart';
 
 class EditOrgScreen extends StatefulWidget {
   const EditOrgScreen({super.key});
@@ -20,6 +21,7 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
 
   final Map<String, String> _initialValues = {};
 
+  UnsavedChangesGuard? _guard;
   @override
   void initState() {
     super.initState();
@@ -36,7 +38,6 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
         _addressCtrl.text = (res['address'] ?? res['morada'] ?? '') as String;
         _hoursCtrl.text = (res['hours'] ?? res['horario'] ?? res['service_hours'] ?? '') as String;
         _phoneCtrl.text = (res['phone'] ?? res['contacts'] ?? res['contact'] ?? '') as String;
-        _emailCtrl.text = (res['contact_email'] ?? res['email'] ?? '') as String;
         _websiteCtrl.text = (res['website'] ?? '') as String;
         _initialValues['name'] = _orgNameCtrl.text;
         _initialValues['address'] = _addressCtrl.text;
@@ -45,6 +46,7 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
         _initialValues['email'] = _emailCtrl.text;
         _initialValues['website'] = _websiteCtrl.text;
         if (mounted) setState(() {});
+        _registerGuard();
       }
     } catch (_) {}
   }
@@ -77,6 +79,7 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
       _initialValues['phone'] = _phoneCtrl.text.trim();
       _initialValues['email'] = _emailCtrl.text.trim();
       _initialValues['website'] = _websiteCtrl.text.trim();
+      _registerGuard();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informações da instituição actualizadas')));
         Navigator.pop(context, true);
@@ -96,6 +99,9 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _websiteCtrl.dispose();
+    if (_guard != null) {
+      UnsavedChangesRegistry.instance.clear(_guard!); // Clear the guard on dispose
+    }
     super.dispose();
   }
 
@@ -131,7 +137,9 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
     return WillPopScope(
       onWillPop: () async {
         if (!_hasChanges()) return true;
-        return await _confirmDiscard();
+        final guard = _guard;
+        if (guard == null) return true; // Check if guard is null
+        return guard.confirmDiscard(); // Use guard to confirm discard
       },
       child: Scaffold(
         appBar: AppBar(
@@ -272,5 +280,13 @@ class _EditOrgScreenState extends State<EditOrgScreen> {
         ),
       ),
     );
+  }
+
+  void _registerGuard() {
+    _guard = UnsavedChangesGuard(
+      hasUnsaved: _hasChanges,
+      confirmDiscard: _confirmDiscard,
+    );
+    UnsavedChangesRegistry.instance.register(_guard!);
   }
 }
