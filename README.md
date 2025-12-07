@@ -34,7 +34,6 @@
 - ⭐ Adicionar animais aos favoritos
 - 💬 Contactar instituições via chat em tempo real
 - ✏️ Editar perfil (nome e avatar)
-- 📱 Receber notificações de mensagens
 
 ### 🏢 Organização (Org)
 - ➕ Adicionar novos animais para adoção
@@ -165,7 +164,7 @@ macos/            # Configuração macOS nativa
 
 ### 2️⃣ Gestão de Animais
 - Organizações criam anúncios com:
-  - Dados base (espécie, raça, nome, sexo, idade, peso, tamanho)
+  - Dados base (espécie, nome, sexo, idade, peso, tamanho)
   - Informações extras (vacinação, expectativa de vida, personalidade, descrição)
   - Multimedia (fotos e vídeos curtos)
   - Cores (suporte a múltiplas cores via CSV)
@@ -239,20 +238,13 @@ A aplicação já tem o backend Supabase configurado, bastando apenas executar o
 flutter run
 ```
 
-#### iOS (requer macOS e Xcode)
+#### iOS
 ```bash
 flutter run -d ios
 ```
 
-#### Web (Browser)
-```bash
-flutter run -d chrome
-```
+> ⚠️ **Nota**: A app **não foi testada em iOS**. Teoricamente deve funcionar uma vez que usa apenas pacotes compatíveis, mas pode haver pequenos ajustes necessários.
 
-#### Windows
-```bash
-flutter run -d windows
-```
 
 ### Passo 4: Testar a App
 
@@ -262,7 +254,7 @@ Uma vez que a app está em execução, pode:
 2. **Criar Conta de Utilizador** - Registe-se com email/password para testar favoritos e chat
 3. **Criar Conta de Organização** - Registe-se como organização para adicionar/editar animais
 4. **Pesquisar Animais** - Use a home screen para navegar e filtrar por espécie, raça, peso, etc.
-5. **Testar Chat** - Contacte uma organização para testar mensageria em tempo real
+5. **Testar Chat** - Contacte uma organização para testar mensagens em tempo real
 6. **Adicionar Favoritos** - Guarde animais de interesse (apenas com conta de utilizador)
 
 > **Nota**: O email de confirmação enviado pelo Supabase redireciona para a página de confirmação customizada em [nestpet-confirm](https://github.com/Hug00x/nestpet-confirm)
@@ -279,7 +271,7 @@ A estrutura de dados está organizada em 6 tabelas principais:
 
 #### **animals** - Anúncios de animais
 - `org_id` - ID da organização que publicou
-- `especie`, `raca`, `nome`, `sexo` - Dados base
+- `especie`, `nome`, `sexo` - Dados base
 - `idade_meses`, `peso_kg`, `tamanho` - Filtros numéricos
 - `vacinado` - Estado de vacinação (Sim/Não/Indiferente)
 - `cor` - Cores separadas por virgula (CSV, suporta múltiplas)
@@ -361,11 +353,11 @@ Armazena todo o conteúdo multimedia:
 
 ### ⚡ Realtime (WebSockets)
 
-Supabase Realtime sincroniza dados em tempo real:
+Supabase Realtime sincroniza dados em tempo real via WebSockets:
 
 1. **Chat**
-   - Quando INSERT em `messages`, todos os subscribers são notificados
-   - Mensagem aparece instantaneamente no outro lado
+   - Quando INSERT em `messages`, todos os subscribers conectados recebem update
+   - Mensagem aparece instantaneamente na UI (sem refresh manual)
 
 2. **Favoritos**
    - INSERT/DELETE em `favorites` dispara update em tempo real
@@ -535,7 +527,7 @@ O NestPet usa uma **página de confirmação de email customizada** hospedada em
 - Senhas hasheadas pelo Supabase Auth
 - Row Level Security (RLS) nas tabelas
 - Tokens JWT para autenticação
-- Storage policies para controle de acesso
+- Storage policies para controlo de acesso
 - Validação client-side e server-side
 - Sanitização de inputs
 
