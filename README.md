@@ -417,6 +417,8 @@ CREATE POLICY "Orgs edit own animals"
 ON animals FOR UPDATE USING (auth.uid() = org_id);
 ```
 
+<br>
+
 ### 📊 Exemplo: Fluxo de uma Mensagem
 
 1. **Utilizador A envia mensagem**
@@ -512,21 +514,6 @@ O NestPet usa uma **página de confirmação de email customizada** hospedada em
 
 ---
 
-## 🖼️ Wireframes
-
-- Wireframes completos incluídos no repositório: `Wireframes NestPet.jpg` (ver raiz do projeto no GitHub)
-- Cumprem o fluxo principal de onboarding, pesquisa, detalhe, favoritos, chat e ecrãs de organização
-- Úteis para alinhamento rápido antes de navegar pelo código
-
----
-
-## 📑 Relatório
-
-- Relatório final incluído na raiz do repositório: `Relatorio_NestPet.pdf`
-- Contém objetivos, arquitetura, decisões técnicas, testes e resultados
-
----
-
 ## 🔐 Segurança
 
 - Senhas hasheadas pelo Supabase Auth
@@ -571,6 +558,21 @@ dependencies:
   uuid: ^4.4.2                 # Geração de UUIDs
   app_links: ^6.4.1            # Deep links
 ```
+
+---
+
+## 🖼️ Wireframes
+
+- Wireframes completos incluídos no repositório: `Wireframes NestPet.jpg` (ver raiz do projeto no GitHub)
+- Cumprem o fluxo principal de onboarding, pesquisa, detalhe, favoritos, chat e ecrãs de organização
+- Úteis para alinhamento rápido antes de navegar pelo código
+
+---
+
+## 📑 Relatório
+
+- Relatório final incluído na raiz do repositório: `Relatorio_NestPet.pdf`
+- Contém objetivos, arquitetura, decisões técnicas, testes e resultados
 
 ---
 
