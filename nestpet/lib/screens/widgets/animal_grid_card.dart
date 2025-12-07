@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/animal.dart';
 import '../../providers/app_state.dart';
 import 'package:video_player/video_player.dart';
@@ -58,7 +59,23 @@ class AnimalGridCard extends StatelessWidget {
                 right: 10,
                 top: 10,
                 child: GestureDetector(
-                  onTap: () => app.toggleFav(animal.id),
+                  onTap: () {
+                    if (app.isGuest) {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text('Criar conta'),
+                          content: const Text('Para adicionar favoritos, precisa de criar uma conta.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+                            FilledButton(onPressed: () { Navigator.pop(dialogContext); context.go('/register/user'); }, child: const Text('Criar conta')),
+                          ],
+                        ),
+                      );
+                    } else {
+                      app.toggleFav(animal.id);
+                    }
+                  },
                   child: SizedBox(
                     width: 40,
                     height: 40,

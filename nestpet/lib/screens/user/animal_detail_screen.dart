@@ -114,7 +114,23 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                 isFav ? Icons.star : Icons.star_border,
                 color: isFav ? Colors.amber.shade400 : colorScheme.onPrimary,
               ),
-              onPressed: () => app.toggleFav(animal.id),
+              onPressed: () {
+                if (app.isGuest) {
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('Criar conta'),
+                      content: const Text('Para adicionar favoritos, precisa de criar uma conta.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+                        FilledButton(onPressed: () { Navigator.pop(dialogContext); context.go('/register/user'); }, child: const Text('Criar conta')),
+                      ],
+                    ),
+                  );
+                } else {
+                  app.toggleFav(animal.id);
+                }
+              },
             ),
           if (isOrg) ...[
             IconButton(
@@ -349,8 +365,22 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     ),
                     onPressed: () {
                       final user = Supabase.instance.client.auth.currentUser;
-                      final userId = user?.id ?? '';
-                      context.push('/chat/${animal.id}/$userId');
+                      if (user == null) {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Criar conta'),
+                            content: const Text('Para contactar a instituição, precisa de criar uma conta.'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                              FilledButton(onPressed: () { Navigator.pop(context); context.go('/register/user'); }, child: const Text('Criar conta')),
+                            ],
+                          ),
+                        );
+                      } else {
+                        final userId = user.id;
+                        context.push('/chat/${animal.id}/$userId');
+                      }
                     },
                     child: const Text(
                       'Contactar instituição',

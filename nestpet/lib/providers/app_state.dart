@@ -17,6 +17,9 @@ class AppState extends ChangeNotifier {
 
   final Set<String> _favIds = {};
 
+  // Helper: verifica se é convidado (não autenticado)
+  bool get isGuest => Supabase.instance.client.auth.currentUser == null;
+
   Future<void> init() async {
     await animals.init();
     await favs.init();
@@ -127,7 +130,7 @@ class AppState extends ChangeNotifier {
   bool isFav(String id) => _favIds.contains(id);
 
   Future<void> toggleFav(String id) async {
-    if (role == UserRole.org) return;
+    if (role == UserRole.org || isGuest) return;
     // Toggle locally immediately so UI responds even without network/session
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final removing = _favIds.contains(id);

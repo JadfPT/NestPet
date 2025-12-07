@@ -95,7 +95,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ],
                       ),
                     ),
-                    IconButton(onPressed: () => context.push('/u/edit'), icon: const Icon(Icons.edit_outlined), tooltip: 'Editar perfil'),
+                    IconButton(
+                      onPressed: () {
+                        final app = Provider.of<AppState>(context, listen: false);
+                        if (app.isGuest) {
+                          showDialog(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
+                              title: const Text('Criar conta'),
+                              content: const Text('Para editar o perfil, precisa de criar uma conta.'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancelar')),
+                                FilledButton(onPressed: () { Navigator.pop(dialogContext); context.go('/register/user'); }, child: const Text('Criar conta')),
+                              ],
+                            ),
+                          );
+                        } else {
+                          context.push('/u/edit');
+                        }
+                      },
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Editar perfil',
+                    ),
                   ],
                 ),
               ),
