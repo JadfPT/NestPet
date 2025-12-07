@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../providers/app_state.dart';
 import '../../models/animal.dart';
 import '../../utils/color_tags.dart';
+import '../../utils/personality_tags.dart';
 
 class AnimalDetailScreen extends StatefulWidget {
   final String id;
@@ -21,6 +22,8 @@ class AnimalDetailScreen extends StatefulWidget {
 
 class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   late final PageController _pageController;
+  bool _showAllPersonalities = false;
+  bool _showAllColors = false;
 
   @override
   void initState() {
@@ -413,6 +416,17 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       caracteristicas = (animal as dynamic).caracteristicas as String?;
     } catch (_) {}
 
+    final facts = [
+      _Fact(label: 'Animal', value: animal.tipo),
+      _Fact(label: 'Nome', value: animal.nome),
+      _Fact(label: 'Sexo', value: animal.sexo),
+      _Fact(label: 'Tamanho', value: animal.tamanho),
+      _Fact(label: 'Idade', value: '${animal.idadeMeses} meses'),
+      _Fact(label: 'Peso', value: '${animal.pesoKg.toStringAsFixed(1)} kg'),
+      _Fact(label: 'Expectativa de vida', value: expVida ?? '—'),
+      _Fact(label: 'Vacinado', value: vacinado == null ? '—' : (vacinado ? 'Sim' : 'Não')),
+    ];
+
     return Card(
       color: const Color(0xFFFDF0DE),
       elevation: 0,
@@ -421,210 +435,206 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
         side: BorderSide(color: primary.withAlpha((0.5*255).round())),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _infoLine('Animal', animal.tipo, accent),
-            _infoLine('Nome', animal.nome, accent),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: _infoLine('Sexo', animal.sexo, accent),
-                ),
-                Expanded(
-                  child: _infoLine('Tamanho', animal.tamanho, accent),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: _infoLine(
-                    'Idade',
-                    '${animal.idadeMeses} meses',
-                    accent,
-                  ),
-                ),
-                Expanded(
-                  child: _infoLine(
-                    'Peso',
-                    '${animal.pesoKg} kg',
-                    accent,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: _infoLine(
-                    'Vacinado',
-                    vacinado == null
-                        ? '—'
-                        : (vacinado ? 'Sim' : 'Não'),
-                    accent,
-                  ),
-                ),
-                Expanded(
-                  child: _infoLine(
-                    'Expectativa de vida',
-                    expVida ?? '—',
-                    accent,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
+            Text('Detalhes', style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 12),
+            _factGrid(facts, accent),
+
             if (caracteristicas != null && caracteristicas.trim().isNotEmpty) ...[
-              Text(
-                'Características:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: accent,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(caracteristicas, style: const TextStyle(color: Colors.black87)),
+              const SizedBox(height: 12),
+              Text('Características', style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
+              Text(caracteristicas, style: const TextStyle(color: Colors.black87)),
             ],
+
+            const SizedBox(height: 12),
+            Text('Cor', style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
             if (cor == null || cor.trim().isEmpty)
-              _infoLine('Cor', '—', accent)
+              _mutedText('—')
             else
-              _colorTagsRow('Cor', cor, accent),
-            const SizedBox(height: 4),
-            if (personalidade.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              _personalityBlock(personalidade, accent),
-            ] else
-              _infoLine('Personalidade', '—', accent),
+              _colorTagsRowStyled(cor, accent),
+
+            const SizedBox(height: 12),
+            Text('Personalidade', style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            if (personalidade.isNotEmpty)
+              _personalityTagsRow(personalidade, accent)
+            else
+              _mutedText('—'),
           ],
         ),
       ),
     );
   }
 
-  Widget _infoLine(String label, String value, Color accent) {
+
+
+  Widget _personalityTagsRow(List<String> personalities, Color accent) {
+    final displayedPersonalities = _showAllPersonalities ? personalities : personalities.take(3).toList();
+    final hasMore = personalities.length > 3;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: accent,
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: displayedPersonalities.map((p) {
+              final c = colorForPersonality(p);
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.black12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black12),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(p),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.black87),
+          if (hasMore)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: GestureDetector(
+                onTap: () => setState(() => _showAllPersonalities = !_showAllPersonalities),
+                child: Text(
+                  _showAllPersonalities ? 'Ocultar' : '+${personalities.length - 3} mais',
+                  style: const TextStyle(
+                    color: Color(0xFF824822),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _colorTagsRow(String label, String? corCsv, Color accent) {
+  Widget _colorTagsRowStyled(String? corCsv, Color accent) {
     final tags = corCsv == null || corCsv.trim().isEmpty
         ? <String>[]
         : corCsv.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    
+    final displayedTags = _showAllColors ? tags : tags.take(3).toList();
+    final hasMore = tags.length > 3;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label: ',
-            style: TextStyle(fontWeight: FontWeight.w600, color: accent),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: displayedTags.map((t) {
+              final c = colorForTag(t);
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: c.withAlpha((0.15 * 255).round()),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      t,
+                      style: TextStyle(
+                        color: c,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
-          Expanded(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: tags.map((t) {
-                final c = colorForTag(t);
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.black12),
+          if (hasMore)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: GestureDetector(
+                onTap: () => setState(() => _showAllColors = !_showAllColors),
+                child: Text(
+                  _showAllColors ? 'Ocultar' : '+${tags.length - 3} mais',
+                  style: const TextStyle(
+                    color: Color(0xFF824822),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(width: 12, height: 12, decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.black12))),
-                      const SizedBox(width: 8),
-                      Text(t),
-                    ],
-                  ),
-                );
-              }).toList(),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _personalityBlock(List<String> traits, Color accent) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
+  Widget _factGrid(List<_Fact> facts, Color accent) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final colWidth = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 10,
+          children: facts.map((f) => SizedBox(width: colWidth, child: _factTile(f, accent))).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _factTile(_Fact fact, Color accent) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Personalidade: ',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: traits
-                      .map(
-                        (_) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Icon(
-                            Icons.circle,
-                            size: 10,
-                            color: accent,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: traits
-                        .map(
-                          (t) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2),
-                            child: Text(t),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Text(fact.label, style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(fact.value, style: const TextStyle(color: Colors.black87)),
         ],
       ),
     );
   }
 
+  Widget _mutedText(String text) => Text(text, style: TextStyle(color: Colors.black54));
   Widget _characteristicsList(String desc) {
     final parts = desc
         .split(RegExp(r'[\n,;]'))
@@ -769,4 +779,10 @@ class _InlineVideoState extends State<_InlineVideo> {
       ),
     );
   }
+}
+
+class _Fact {
+  final String label;
+  final String value;
+  _Fact({required this.label, required this.value});
 }

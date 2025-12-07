@@ -9,6 +9,7 @@ import '../../models/animal.dart';
 import '../../data/storage_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/color_tags.dart';
+import '../../utils/personality_tags.dart';
 
 class EditAnimalScreen extends StatefulWidget {
   final String id;
@@ -23,11 +24,9 @@ class EditAnimalScreen extends StatefulWidget {
 class _EditAnimalScreenState extends State<EditAnimalScreen> {
   final form = GlobalKey<FormState>();
   late Animal a;
-  bool _showColorChips = false;
   // form state mirroring AddAnimalScreen so structure matches
   final _nomeController = TextEditingController();
   final _descricaoController = TextEditingController();
-  final _personalidadeController = TextEditingController();
   final _caracteristicasController = TextEditingController();
   String tipo = 'Cão';
   String sexo = 'M';
@@ -36,7 +35,10 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   String tamanho = 'médio';
   int expectativaVidaAnos = 0;
   bool vacinado = false;
+  bool _showAllPersonalities = false;
+  bool _showAllColors = false;
   final Set<String> _selectedColors = {};
+  final Set<String> _selectedPersonalities = {};
 
   @override
   void initState() {
@@ -47,7 +49,6 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
       // initialize controllers/state from cached
       _nomeController.text = a.nome;
       _descricaoController.text = a.descricao;
-      _personalidadeController.text = a.personalidade;
       _caracteristicasController.text = a.caracteristicas;
       tipo = a.tipo;
       sexo = a.sexo;
@@ -57,6 +58,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
       expectativaVidaAnos = a.expectativaVidaAnos;
       vacinado = a.vacinado;
       _selectedColors.addAll(a.cor.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+      _selectedPersonalities.addAll(a.personalidade.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
     } else {
       a = Animal(id: widget.id, nome: '', tipo: 'Cão', sexo: 'M', idadeMeses: 0, pesoKg: 0.0, tamanho: 'médio', descricao: '', media: []);
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -166,7 +168,67 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             Slider(value: peso, min: 0.5, max: 60, divisions: 119, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
             TextFormField(controller: _descricaoController, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3),
             const SizedBox(height: 12),
-            TextFormField(controller: _personalidadeController, decoration: const InputDecoration(labelText: 'Personalidade')),
+            Text('Personalidade', style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: (_showAllPersonalities ? personalityOptions : personalityOptions.take(3).toList()).map((p) {
+                final isSelected = _selectedPersonalities.contains(p);
+                final c = colorForPersonality(p);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (isSelected) {
+                      _selectedPersonalities.remove(p);
+                    } else {
+                      _selectedPersonalities.add(p);
+                    }
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? c.withAlpha((0.2 * 255).round()) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? c : Colors.black12,
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isSelected) Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                          child: const Icon(Icons.check, size: 10, color: Colors.white),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(p, style: TextStyle(
+                          color: isSelected ? c : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        )),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            if (personalityOptions.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: GestureDetector(
+                  onTap: () => setState(() => _showAllPersonalities = !_showAllPersonalities),
+                  child: Text(
+                    _showAllPersonalities ? 'Ocultar' : '+${personalityOptions.length - 3} mais',
+                    style: const TextStyle(
+                      color: Color(0xFF824822),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -183,39 +245,66 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                const Expanded(child: Text('Cores')),
-                IconButton(
-                  icon: Icon(_showColorChips ? Icons.expand_less : Icons.expand_more),
-                  onPressed: () => setState(() => _showColorChips = !_showColorChips),
-                ),
-              ],
+            Text('Cores', style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: (_showAllColors ? kCommonColorTags : kCommonColorTags.take(6).toList()).map((tag) {
+                final selected = _selectedColors.contains(tag);
+                final c = colorForTag(tag);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (selected) {
+                      _selectedColors.remove(tag);
+                    } else {
+                      _selectedColors.add(tag);
+                    }
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? c.withAlpha((0.2 * 255).round()) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: selected ? c : Colors.black12,
+                        width: selected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (selected) Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                          child: const Icon(Icons.check, size: 10, color: Colors.white),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(tag, style: TextStyle(
+                          color: selected ? c : Colors.black87,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                        )),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-            const SizedBox(height: 6),
-            if (_showColorChips)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: kCommonColorTags.map((tag) {
-                  final selected = _selectedColors.contains(tag);
-                  return FilterChip(
-                    label: Text(tag),
-                    selected: selected,
-                    onSelected: (v) => setState(() {
-                      if (v) {
-                        _selectedColors.add(tag);
-                      } else {
-                        _selectedColors.remove(tag);
-                      }
-                    }),
-                  );
-                }).toList(),
-              )
-            else
+            if (kCommonColorTags.length > 6)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6.0),
-                child: Text(_selectedColors.isEmpty ? 'Nenhuma selecionada' : 'Selecionadas: ${_selectedColors.take(3).join(', ')}${_selectedColors.length>3? ' +${_selectedColors.length-3}':''}'),
+                padding: const EdgeInsets.only(top: 8),
+                child: GestureDetector(
+                  onTap: () => setState(() => _showAllColors = !_showAllColors),
+                  child: Text(
+                    _showAllColors ? 'Ocultar' : '+${kCommonColorTags.length - 6} mais',
+                    style: const TextStyle(
+                      color: Color(0xFF824822),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ),
             const SizedBox(height: 12),
             Row(
@@ -254,7 +343,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
                 // populate model from controllers/state
                 a.nome = _nomeController.text.trim();
                 a.descricao = _descricaoController.text.trim();
-                a.personalidade = _personalidadeController.text.trim();
+                a.personalidade = _selectedPersonalities.join(',');
                 a.caracteristicas = _caracteristicasController.text.trim();
                 a.tipo = tipo;
                 a.sexo = sexo;
@@ -287,7 +376,6 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   void dispose() {
     _nomeController.dispose();
     _descricaoController.dispose();
-    _personalidadeController.dispose();
     _caracteristicasController.dispose();
     super.dispose();
   }
