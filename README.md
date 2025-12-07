@@ -306,6 +306,8 @@ A estrutura de dados está organizada em 6 tabelas principais:
 - Armazena quem está a escrever numa conversa específica
 - Atualizado em tempo real para melhor UX
 
+<br>
+
 ### 🔐 Autenticação (Supabase Auth)
 
 Supabase Auth fornece:
@@ -329,6 +331,8 @@ Supabase Auth fornece:
   - Link redireciona para [nestpet-confirm](https://github.com/Hug00x/nestpet-confirm)
   - Design consistente com a app em português
 
+<br>
+
 ### 💾 Storage (Supabase Storage - S3 Compatible)
 
 Armazena todo o conteúdo multimedia:
@@ -347,6 +351,8 @@ Armazena todo o conteúdo multimedia:
 - Upload autenticado (apenas utilizadores logged-in)
 - Delete autenticado (apenas o owner)
 
+<br>
+
 ### ⚡ Realtime (WebSockets)
 
 Supabase Realtime sincroniza dados em tempo real:
@@ -362,6 +368,8 @@ Supabase Realtime sincroniza dados em tempo real:
 3. **Typing Status**
    - UPDATE em `typing_status` notifica em tempo real
    - "A escrever..." aparece/desaparece instantaneamente
+
+<br>
 
 ### 🌐 Como a App Comunica
 
@@ -401,6 +409,8 @@ await supabase.storage
     .from('animal-images')
     .upload('${userId}/${animalId}/photo.jpg', file);
 ```
+
+<br>
 
 ### 🔒 Segurança (Row Level Security)
 
