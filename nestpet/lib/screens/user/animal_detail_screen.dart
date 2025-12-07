@@ -321,7 +321,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 80), // espaço para o botão fixo
+                    SizedBox(height: isOrg ? 24 : 80), // espaço para o botão fixo (apenas quando há botão)
                   ],
                 ),
               ),
@@ -331,33 +331,35 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       ),
 
       // BOTÃO FIXO EM BAIXO
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: SizedBox(
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primary,
-                foregroundColor: colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+      bottomNavigationBar: isOrg
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: () {
+                      final user = Supabase.instance.client.auth.currentUser;
+                      final userId = user?.id ?? '';
+                      context.push('/chat/${animal.id}/$userId');
+                    },
+                    child: const Text(
+                      'Contactar instituição',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
                 ),
-                elevation: 2,
-              ),
-              onPressed: () {
-                final user = Supabase.instance.client.auth.currentUser;
-                final userId = user?.id ?? '';
-                context.push('/chat/${animal.id}/$userId');
-              },
-              child: const Text(
-                'Contactar instituição',
-                style: TextStyle(fontSize: 16),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
