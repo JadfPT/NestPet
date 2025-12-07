@@ -132,7 +132,17 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome')),
+            Row(
+              children: [
+                Expanded(child: TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome'))),
+                const SizedBox(width: 12),
+                Expanded(child: DropdownButtonFormField<String>(initialValue: tipo, items: const [
+                  DropdownMenuItem(value: 'Cão', child: Text('Cão')),
+                  DropdownMenuItem(value: 'Gato', child: Text('Gato')),
+                  DropdownMenuItem(value: 'Outro', child: Text('Outro')),
+                ], onChanged: (v)=> setState(()=> tipo=v! ), decoration: const InputDecoration(labelText: 'Tipo'))),
+              ],
+            ),
             const SizedBox(height: 8),
             Row(
               children: [

@@ -115,12 +115,12 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                                 Navigator.of(context).pop({
                                   'tipo': null,
                                   'tamanho': null,
-                                  'idade': 60,
+                                  'idade': null,
                                   'sexo': null,
                                   'vacinado': null,
                                   'cor': null,
-                                  'pesoMin': 0,
-                                  'pesoMax': 40,
+                                  'pesoMin': null,
+                                  'pesoMax': null,
                                 });
                               },
                             ),
@@ -133,6 +133,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           items: const [
                             DropdownMenuItem(value: 'Cão', child: Text('Cão')),
                             DropdownMenuItem(value: 'Gato', child: Text('Gato')),
+                            DropdownMenuItem(value: 'Outro', child: Text('Outro')),
                           ],
                           onChanged: (v) => setState(() => tipo = v),
                         ),
@@ -216,7 +217,23 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                         const SizedBox(height: 8),
                         // Características field removed per design decision.
                         const SizedBox(height: 12),
-                        SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.of(context).pop({'tipo': tipo, 'tamanho': tamanho, 'idade': idade.round(), 'sexo': sexo, 'vacinado': vacinado, 'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','), 'pesoMin': peso.start.round(), 'pesoMax': peso.end.round()}), child: const Text('Aplicar'))),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: () => Navigator.of(context).pop({
+                              'tipo': tipo,
+                              'tamanho': tamanho,
+                              // se o utilizador não mexeu, devolve null para não filtrar
+                              'idade': (idade == 60) ? null : idade.round(),
+                              'sexo': sexo,
+                              'vacinado': vacinado,
+                              'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','),
+                              'pesoMin': (peso.start == 0) ? null : peso.start.round(),
+                              'pesoMax': (peso.end == 40) ? null : peso.end.round(),
+                            }),
+                            child: const Text('Aplicar'),
+                          ),
+                        ),
                         const SizedBox(height: 8),
                       ],
                     ),

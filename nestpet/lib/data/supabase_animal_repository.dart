@@ -162,6 +162,7 @@ class SupabaseAnimalRepository {
     // Map DB type back to display value (e.g. 'Cao' -> 'Cão')
     var tipoFromDb = (r['type'] ?? r['tipo'] ?? 'Cao').toString();
     if (tipoFromDb.toLowerCase() == 'cao') tipoFromDb = 'Cão';
+    if (tipoFromDb.toLowerCase() == 'outro') tipoFromDb = 'Outro';
 
     return Animal(
       id: r['id'].toString(),

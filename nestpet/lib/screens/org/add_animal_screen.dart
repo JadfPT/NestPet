@@ -149,6 +149,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   Expanded(child: DropdownButtonFormField<String>(initialValue: tipo, items: const [
                     DropdownMenuItem(value: 'Cão', child: Text('Cão')),
                     DropdownMenuItem(value: 'Gato', child: Text('Gato')),
+                    DropdownMenuItem(value: 'Outro', child: Text('Outro')),
                   ], onChanged: (v)=> setState(()=> tipo=v!), decoration: const InputDecoration(labelText: 'Tipo'))),
                 ],
               ),
