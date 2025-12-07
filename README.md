@@ -512,6 +512,21 @@ O NestPet usa uma **página de confirmação de email customizada** hospedada em
 
 ---
 
+## 🖼️ Wireframes
+
+- Wireframes completos incluídos no repositório: `Wireframes NestPet.jpg` (ver raiz do projeto no GitHub)
+- Cumprem o fluxo principal de onboarding, pesquisa, detalhe, favoritos, chat e ecrãs de organização
+- Úteis para alinhamento rápido antes de navegar pelo código
+
+---
+
+## 📑 Relatório
+
+- Relatório final incluído na raiz do repositório: `Relatorio_NestPet.pdf`
+- Contém objetivos, arquitetura, decisões técnicas, testes e resultados
+
+---
+
 ## 🔐 Segurança
 
 - Senhas hasheadas pelo Supabase Auth
