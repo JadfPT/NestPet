@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:app_links/app_links.dart';
 import 'supabase_config.dart';
 import 'app_router.dart';
 import 'providers/app_state.dart';
@@ -98,7 +99,36 @@ void main() async {
       }
     }
   });
+
+  // Listen for deep links (email confirmation, etc.)
+  _initDeepLinks();
+
   runApp(NestPetApp(state: state));
+}
+
+void _initDeepLinks() async {
+  final appLinks = AppLinks();
+  
+  // Check initial link if app was opened via deep link
+  try {
+    final uri = await appLinks.getInitialLink();
+    if (uri != null) {
+      _handleDeepLink(uri);
+    }
+  } catch (_) {}
+
+  // Listen for links while app is running
+  appLinks.uriLinkStream.listen((uri) {
+    _handleDeepLink(uri);
+  });
+}
+
+void _handleDeepLink(Uri uri) {
+  // nestpet://welcome -> redirect to welcome screen
+  if (uri.scheme == 'nestpet' && uri.host == 'welcome') {
+    router.go('/welcome');
+  }
+  // Adicione outros paths se necessário (ex: nestpet://reset para password reset)
 }
 
 class NestPetApp extends StatelessWidget {
