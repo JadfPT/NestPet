@@ -165,7 +165,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             Text('Idade (meses): $idade'),
             Slider(value: idade.toDouble(), min: 0, max: 120, divisions: 120, onChanged: (v)=> setState(()=> idade=v.round())),
             Text('Peso (kg): ${peso.toStringAsFixed(1)}'),
-            Slider(value: peso, min: 0.5, max: 60, divisions: 119, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
+            Slider(value: peso, min: 0.5, max: 100, divisions: 199, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
             TextFormField(controller: _descricaoController, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3),
             const SizedBox(height: 12),
             Text('Personalidade', style: const TextStyle(fontWeight: FontWeight.w600)),
