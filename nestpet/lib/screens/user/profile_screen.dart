@@ -124,23 +124,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             children: const [
                               Text('Visão geral', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
-                              Text('A NestPet liga utilizadores a instituições que têm animais para adoção. Podes navegar por animais, favoritar, e enviar mensagens para perguntar ou marcar uma visita.'),
+                              Text('A NestPet liga utilizadores a instituições que têm animais para adoção. Pode navegar por animais, favoritar, e enviar mensagens para fazer perguntas ou marcar uma visita.'),
                               SizedBox(height: 12),
                               Text('Principais ações', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
-                              Text('• Ver animais: na página inicial vê cartões com a foto e o nome do animal.'),
-                              Text('• Detalhes: toca no cartão para ver galeria, descrição, e informação de contacto.'),
-                              Text('• Favoritar: toca na estrela no canto superior do cartão para guardar o animal nos favoritos.'),
-                              Text('• Mensagens: usa o ícone de mensagens para comunicar com a instituição sobre um animal.'),
+                              Text('• Ver animais: na página inicial veja cartões com a foto e o nome do animal.'),
+                              Text('• Detalhes: toque no cartão para ver galeria, descrição, e informação de contacto.'),
+                              Text('• Favoritar: toque na estrela no canto superior do cartão para guardar o animal nos favoritos.'),
+                              Text('• Mensagens: use o ícone de mensagens para comunicar com a instituição sobre um animal.'),
                               SizedBox(height: 12),
                               Text('Conta e perfil', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
-                              Text('• Editar perfil: toca no botão de editar no topo do perfil para alterar o nome ou avatar.'),
+                              Text('• Editar perfil: toque no botão de editar no topo do perfil para alterar o nome ou avatar.'),
                               SizedBox(height: 12),
                               Text('Dicas', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
-                              Text('• Se uma imagem não carregar, tenta novamente mais tarde.'),
-                              Text('• Para apagar a conta, utiliza a opção de apagar dentro das definições (será pedido confirmar).'),
+                              Text('• Se uma imagem não carregar, tente novamente mais tarde.'),
+                              Text('• Para apagar a conta, utilize a opção de apagar dentro das definições (será pedida confirmação).'),
                             ],
                           ),
                         ),
@@ -187,7 +187,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               SizedBox(height: 12),
                               Text('Contacto', style: TextStyle(fontWeight: FontWeight.w700)),
                               SizedBox(height: 8),
-                              Text('Para questões sobre privacidade contacte: privacidade@exemplo.com'),
+                              Text('Para questões sobre privacidade contacte o suporte'),
                             ],
                           ),
                         ),
@@ -208,7 +208,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     title: const Text('Terminar sessão'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () async {
-                      final ok = await _confirm(context, 'Terminar sessão', 'Queres mesmo terminar a sessão?');
+                      final ok = await _confirm(context, 'Terminar sessão', 'Quer mesmo terminar a sessão?');
                       if (ok == true) {
                         context.read<AppState>().logout();
                         if (context.mounted) context.go('/welcome');

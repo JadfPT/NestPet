@@ -71,7 +71,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           context: context,
           builder: (c) => AlertDialog(
             title: const Text('Alterações não guardadas'),
-            content: const Text('Tens alterações por guardar. Queres guardar ou descartar estas alterações?'),
+            content: const Text('Tem alterações por guardar. Quer guardar ou descartar essas alterações?'),
             actions: [
               TextButton(onPressed: () => Navigator.pop(c, 0), child: const Text('Cancelar')),
               TextButton(onPressed: () => Navigator.pop(c, 2), child: const Text('Descartar')),
@@ -157,7 +157,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     } catch (e) {
       final msg = e.toString();
       if (msg.toLowerCase().contains('bucket not found') || msg.contains('statusCode: 404')) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao enviar avatar: bucket 'avatars' não encontrado. Cria um bucket 'avatars' no Supabase Storage ou atualiza o nome do bucket no código.")));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao enviar avatar: bucket 'avatars' não encontrado. Contacte o suporte.")));
       } else {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar avatar: $e')));
       }
@@ -171,7 +171,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       context: context,
       builder: (c) => AlertDialog(
         title: const Text('Apagar conta'),
-        content: const Text('Tens a certeza que queres apagar a tua conta? Esta ação não pode ser desfeita.'),
+        content: const Text('Tem a certeza que quer apagar a sua conta? Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
           FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Apagar')),
@@ -187,7 +187,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       builder: (c) {
         final TextEditingController pwdCtrl = TextEditingController();
         return AlertDialog(
-          title: const Text('Confirma a password'),
+          title: const Text('Confirme a password'),
           content: TextField(
             controller: pwdCtrl,
             obscureText: true,

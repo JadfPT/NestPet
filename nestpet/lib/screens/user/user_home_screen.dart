@@ -233,7 +233,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ? EmptyState(
                         icon: Icons.search_off,
                         title: 'Nenhum animal encontrado',
-                        message: 'Tenta ajustar os filtros ou volta a tentar mais tarde.',
+                        message: 'Tente ajustar os filtros ou volte a tentar mais tarde.',
                         actionText: 'Limpar filtros',
                         onAction: () => setState(() { tipo = null; tamanho = null; idadeMax = null; sexo = null; vacinado = null; cor = null; pesoMin = null; pesoMax = null; }),
                       )

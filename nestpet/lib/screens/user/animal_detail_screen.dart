@@ -131,7 +131,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                   builder: (_) => AlertDialog(
                     title: const Text('Apagar animal'),
                     content: const Text(
-                      'Tens a certeza? Esta ação é irreversível.',
+                      'Tem a certeza? Esta ação é irreversível.',
                     ),
                     actions: [
                       TextButton(

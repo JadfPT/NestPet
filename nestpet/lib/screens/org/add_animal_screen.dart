@@ -120,7 +120,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     // persist selected tags as comma-separated string
     cor = _selectedColors.join(',');
     if (media.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adiciona pelo menos uma foto/vídeo.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adicione pelo menos uma foto/vídeo.')));
       return;
     }
     final app = context.read<AppState>();
