@@ -38,7 +38,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
   final Set<String> _selectedColors = {};
   bool _showColorChips = false;
   
-  RangeValues peso = const RangeValues(0, 40);
+  RangeValues peso = const RangeValues(0, 100);
 
   @override
   void initState() {
@@ -160,7 +160,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                         SwitchListTile(
                           title: const Text('Vacinado'),
                           value: vacinado ?? false,
-                          onChanged: (v) => setState(() => vacinado = v),
+                          onChanged: (v) => setState(() => vacinado = v ? true : null),
                         ),
                         Row(
                           children: [
@@ -228,8 +228,8 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                               'sexo': sexo,
                               'vacinado': vacinado,
                               'cor': _selectedColors.isEmpty ? null : _selectedColors.join(','),
-                              'pesoMin': (peso.start == 0) ? null : peso.start.round(),
-                              'pesoMax': (peso.end == 40) ? null : peso.end.round(),
+                              'pesoMin': (peso.start == 0) ? null : peso.start,
+                              'pesoMax': (peso.end == 100) ? null : peso.end,
                             }),
                             child: const Text('Aplicar'),
                           ),
