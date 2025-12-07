@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../app_router.dart';
 
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
@@ -121,7 +120,13 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar animal')),
+      appBar: AppBar(
+        title: const Text('Editar animal'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Form(
         key: form,
         child: ListView(
@@ -253,7 +258,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
                   await context.read<AppState>().updateAnimal(a);
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Guardado com sucesso')));
-                  router.go('/o/home');
+                  Navigator.of(context).pop();
                 } catch (e) {
                   // ignore: avoid_print
                   print('updateAnimal failed: $e');

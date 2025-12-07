@@ -2,7 +2,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -118,7 +117,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
             IconButton(
               tooltip: 'Editar',
               icon: const Icon(Icons.edit),
-              onPressed: () => context.go('/o/edit/${animal.id}'),
+              onPressed: () => context.push('/o/edit/${animal.id}'),
             ),
             IconButton(
               tooltip: 'Apagar',
@@ -145,7 +144,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                 );
                 if (ok == true) {
                   await context.read<AppState>().deleteAnimal(animal.id);
-                  if (context.mounted) router.go('/o/home');
+                  if (context.mounted) context.go('/o/home');
                 }
               },
             ),
@@ -226,7 +225,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                       _characteristicsList(animal.descricao)
                     else
                       const Text(
-                        'Sem informações adicionais.',
+                        'Sem descrição.',
                         style: TextStyle(color: Colors.black54),
                       ),
                     const SizedBox(height: 18),
@@ -746,11 +745,23 @@ class _InlineVideoState extends State<_InlineVideo> {
           Positioned(
             bottom: 8,
             right: 8,
-            child: IconButton.filledTonal(
-              onPressed: () =>
-                  _c.value.isPlaying ? _c.pause() : _c.play(),
-              icon: Icon(
-                _c.value.isPlaying ? Icons.pause : Icons.play_arrow,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2E8D7),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                onPressed: () {
+                  setState(() {
+                    _c.value.isPlaying ? _c.pause() : _c.play();
+                  });
+                },
+                icon: Icon(
+                  _c.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: const Color(0xFF824822),
+                ),
               ),
             ),
           ),

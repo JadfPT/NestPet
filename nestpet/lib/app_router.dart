@@ -223,12 +223,16 @@ final router = GoRouter(
       routes: [
         GoRoute(path: '/o/home', builder: (context, state) => const MyAnimalsScreen()),
         GoRoute(path: '/o/add', builder: (context, state) => const AddAnimalScreen()),
-        GoRoute(path: '/o/edit/:id', builder: (ctx, st) => EditAnimalScreen(id: st.pathParameters['id']!)),
         GoRoute(path: '/o/profile', builder: (context, state) => const OrgProfileScreen()),
       ],
     ),
 
     // Rotas comuns SEMPRE no root (fora dos shells)
+    GoRoute(
+      path: '/o/edit/:id',
+      parentNavigatorKey: _rootKey,
+      builder: (ctx, st) => EditAnimalScreen(id: st.pathParameters['id']!),
+    ),
     GoRoute(
       path: '/animal/:id',
       parentNavigatorKey: _rootKey,

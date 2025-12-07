@@ -24,8 +24,12 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
-  void _openActions(BuildContext context, Animal a) {
-    showModalBottomSheet(
+  void _openActions(BuildContext context, Animal a) async {
+    // Remove FAB overlay while modal is open to prevent overlap
+    _fabOverlay?.remove();
+    _fabOverlay = null;
+
+    await showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
         child: Column(
@@ -56,6 +60,11 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
         ),
       ),
     );
+
+    // Re-insert FAB overlay after modal closes
+    if (mounted) {
+      _insertFabOverlay();
+    }
   }
 
   @override
