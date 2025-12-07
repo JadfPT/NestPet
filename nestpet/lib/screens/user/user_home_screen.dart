@@ -23,8 +23,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? sexo;
   bool? vacinado;
   String? cor;
-  int? pesoMin;
-  int? pesoMax;
+  double? pesoMin;
+  double? pesoMax;
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   OverlayEntry? _fabOverlay;
@@ -64,8 +64,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           sexo = res['sexo'] as String?;
           vacinado = res['vacinado'] as bool?;
           cor = res['cor'] as String?;
-          pesoMin = res['pesoMin'] as int?;
-          pesoMax = res['pesoMax'] as int?;
+          pesoMin = res['pesoMin'] as double?;
+          pesoMax = res['pesoMax'] as double?;
           // caracteristicas removed from filters
         });
       }
@@ -92,8 +92,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       if (sexo != null && sexo!.isNotEmpty && a.sexo != sexo) return false;
       // vacinado
       if (vacinado != null && a.vacinado != vacinado) return false;
-      // cor (contains, case-insensitive)
-      if (cor != null && cor!.isNotEmpty && !a.cor.toLowerCase().contains(cor!.toLowerCase())) return false;
+      // cor (check if any selected color matches the animal's color)
+      if (cor != null && cor!.isNotEmpty) {
+        final selectedColors = cor!.split(',').map((s) => s.trim().toLowerCase()).where((s) => s.isNotEmpty).toList();
+        final animalColor = a.cor.toLowerCase();
+        if (!selectedColors.any((c) => animalColor.contains(c))) return false;
+      }
       // peso
       if (pesoMin != null && a.pesoKg < pesoMin!) return false;
       if (pesoMax != null && a.pesoKg > pesoMax!) return false;

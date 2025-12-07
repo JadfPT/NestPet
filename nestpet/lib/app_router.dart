@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
 import 'providers/app_state.dart';
+import 'utils/unsaved_changes_guard.dart';
 
 // --- AUTH screens
 import 'screens/auth/login_screen.dart';
@@ -73,14 +74,20 @@ class _UserShell extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        onPressed: () => context.go('/u/favorites'),
+                        onPressed: () async {
+                          final ok = await UnsavedChangesRegistry.instance.maybeConfirmNavigation();
+                          if (ok && context.mounted) context.go('/u/favorites');
+                        },
                         icon: Icon(favActive ? Icons.star : Icons.star_border),
                         color: Colors.white,
                       ),
 
                       // center home inside the pill
                       GestureDetector(
-                        onTap: () => context.go('/u/home'),
+                        onTap: () async {
+                          final ok = await UnsavedChangesRegistry.instance.maybeConfirmNavigation();
+                          if (ok && context.mounted) context.go('/u/home');
+                        },
                         child: Container(
                           width: 48,
                           height: 48,
@@ -93,7 +100,10 @@ class _UserShell extends StatelessWidget {
                       ),
 
                       IconButton(
-                        onPressed: () => context.go('/u/profile'),
+                        onPressed: () async {
+                          final ok = await UnsavedChangesRegistry.instance.maybeConfirmNavigation();
+                          if (ok && context.mounted) context.go('/u/profile');
+                        },
                         icon: Icon(profActive ? Icons.person : Icons.person_outline),
                         color: Colors.white,
                       ),
@@ -154,13 +164,19 @@ class _OrgShell extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        onPressed: () => context.go('/o/add'),
+                        onPressed: () async {
+                          final ok = await UnsavedChangesRegistry.instance.maybeConfirmNavigation();
+                          if (ok && context.mounted) context.go('/o/add');
+                        },
                         icon: Icon(addActive ? Icons.add_box : Icons.add_box_outlined),
                         color: Colors.white,
                       ),
 
                       GestureDetector(
-                        onTap: () => context.go('/o/home'),
+                        onTap: () async {
+                          final ok = await UnsavedChangesRegistry.instance.maybeConfirmNavigation();
+                          if (ok && context.mounted) context.go('/o/home');
+                        },
                         child: Container(
                           width: 48,
                           height: 48,
@@ -170,7 +186,10 @@ class _OrgShell extends StatelessWidget {
                       ),
 
                       IconButton(
-                        onPressed: () => context.go('/o/profile'),
+                        onPressed: () async {
+                          final ok = await UnsavedChangesRegistry.instance.maybeConfirmNavigation();
+                          if (ok && context.mounted) context.go('/o/profile');
+                        },
                         icon: Icon(profActive ? Icons.person : Icons.person_outline),
                         color: Colors.white,
                       ),
