@@ -579,8 +579,45 @@ dependencies:
 
 ## 📑 Relatório
 
-- Relatório final incluído na raiz do repositório: `Relatorio_NestPet.pdf`
-- Contém objetivos, arquitetura, decisões técnicas, testes e resultados
+O relatório técnico completo do projeto está disponível na raiz do repositório: **`TColetivo_PDM.pdf`**
+
+### Conteúdo do Relatório
+
+O documento apresenta uma análise detalhada do desenvolvimento do NestPet, abrangendo:
+
+1. **Introdução e Objetivos**
+   - Contextualização do problema de adoção animal em Portugal
+   - Objetivos do projeto e público-alvo
+   - Justificação técnica para escolha de Flutter e Supabase
+
+2. **Arquitetura e Design**
+   - Diagrama de arquitetura do sistema (cliente-servidor)
+   - Estrutura de base de dados PostgreSQL com 6 tabelas principais
+   - Padrões de projeto aplicados (Provider, Repository Pattern, MVC adaptado)
+   - Wireframes e mockups de todos os fluxos da aplicação
+
+3. **Implementação Técnica**
+   - Decisões de design de código e estrutura de pastas
+   - Integração com Supabase (Auth, Storage, Realtime, RLS)
+   - Sistema de navegação com GoRouter e shell routes
+   - Gestão de estado reativo com Provider
+
+4. **Funcionalidades Implementadas**
+   - Sistema de autenticação com 3 tipos de conta (Convidado, Utilizador, Organização)
+   - CRUD completo de animais com suporte multimedia
+   - Chat em tempo real via WebSockets
+   - Sistema de favoritos sincronizado
+   - Pesquisa avançada com múltiplos filtros
+
+5. **Testes e Validação**
+   - Testes de usabilidade realizados
+   - Validação de funcionalidades críticas
+   - Análise de performance e otimizações
+
+6. **Conclusões e Trabalho Futuro**
+   - Reflexão sobre objetivos alcançados
+   - Limitações conhecidas (iOS não testado, ausência de notificações push)
+   - Sugestões de melhorias futuras (geolocalização, sistema de denúncias, etc.)
 
 ---
 
