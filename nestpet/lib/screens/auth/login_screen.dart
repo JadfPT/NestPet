@@ -1,3 +1,13 @@
+/*
+Propósito: Ecrã de autenticação para iniciar sessão ou registar.
+- Permite login com email/password e opcionalmente registo no mesmo fluxo.
+- Ajusta destino e papel (utilizador/instituição) conforme metadados.
+
+Observações:
+- Usa `AuthService` e Supabase para autenticação e leitura de utilizador.
+- Validação de NIF incluída para registos de instituição.
+- Navegação via `router` para `/u/home` ou `/o/home` após login.
+*/
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 import 'package:flutter/material.dart';
 import '../../app_router.dart';
@@ -6,8 +16,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_state.dart';
 import '../../services/auth_service.dart';
 
+// Valida um NIF: 9 dígitos com verificação do dígito de controlo.
 bool _validateNIF(String nif) {
-  // NIF (Portugal) validation: 9 digits, checksum on first 8 digits
   if (!RegExp(r'^\d{9}$').hasMatch(nif)) return false;
   final digits = nif.split('').map(int.parse).toList();
   final weights = [9,8,7,6,5,4,3,2];
@@ -19,6 +29,7 @@ bool _validateNIF(String nif) {
   return check == digits[8];
 }
 
+// Ecrã de login/registo.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
   @override
@@ -26,17 +37,21 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Form e controladores.
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _nifCtrl = TextEditingController();
+  // Modo registo vs login e papel preferido.
   bool _isRegister = false;
   final UserRole _role = UserRole.user;
+  // Serviço de autenticação e estados.
   final _auth = AuthService();
   bool _loading = false;
   bool _checkedQuery = false;
   bool _obscurePassword = true;
 
+  // Submete: login ou registo, define papel e navega.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; });
@@ -49,20 +64,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (_isRegister) {
+        // Em registo de org, valida NIF.
         if (_role == UserRole.org) {
           final nif = _nifCtrl.text.trim();
           if (!_validateNIF(nif)) throw Exception('NIF inválido');
         }
-        // Tentar registar; Supabase pode requerer confirmação por email.
         await _auth.signUpEmail(email, pass);
         final user = _auth.currentUser();
         if (user == null) {
-          // Registo criado, mas sem sessão ativa — informar utilizador.
           snackMessage = 'Registo efetuado. Verifique o seu email para confirmar a conta antes de iniciar sessão.';
         } else {
           performLogin = true;
         }
       } else {
+        // Fluxo de login.
         await _auth.signInEmail(email, pass);
         final user = _auth.currentUser();
         if (user == null) throw Exception('Login falhou');
@@ -70,9 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (performLogin) {
-        // Prefer server-side role metadata when available, otherwise use chosen _role
-        // Force re-fetch of the user from Supabase to ensure any server-side
-        // metadata written by triggers/handlers is available.
+
         User? sdkUser;
         try {
           final resp = await Supabase.instance.client.auth.getUser();
@@ -81,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           sdkUser = _auth.currentUser();
         }
 
+        // Determina papel final a partir dos metadados; default para `_role`.
         String chosen = 'user';
         try {
           final meta = sdkUser?.userMetadata;
@@ -97,9 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (snackMessage != null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(snackMessage)));
         if (performLogin) {
           final app = context.read<AppState>();
-          // Login should use the resolved role (from server metadata if present)
           try {
-            // Re-fetch user to ensure server-updated metadata is visible.
             User? sdkUser;
             try {
               final resp = await Supabase.instance.client.auth.getUser();
@@ -118,6 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
           } catch (_) {
             app.login(_role);
           }
+          // Navega para o ecrã inicial do papel escolhido.
           router.go(targetPath!);
         }
         setState(() { _loading = false; });
@@ -127,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Check for a `register` query parameter once and toggle register mode.
+    // Lê query `register=true` para ativar modo registo.
     if (!_checkedQuery) {
       _checkedQuery = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -137,6 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       });
     }
+    // Cores de estilo.
     final colors = Theme.of(context).colorScheme;
     final primary = colors.primary;
     final surface = colors.surface;
@@ -146,6 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        // Botão voltar.
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: primary),
           onPressed: () => router.go('/welcome'),
@@ -161,7 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Card container that matches the wireframe
                   Container(
                     decoration: BoxDecoration(
                       color: surface,
@@ -171,6 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        // Logo e título.
                         SizedBox(
                           width: 160,
                           height: 160,
@@ -182,6 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
                         Text('NestPet', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: primary)),
                         const SizedBox(height: 12),
+                        // Campo email.
                         TextFormField(
                           controller: _emailCtrl,
                           decoration: InputDecoration(
@@ -196,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Password field with toggle visibility
+                        // Campo password com alternância de visibilidade.
                         TextFormField(
                           controller: _passCtrl,
                           decoration: InputDecoration(
@@ -216,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 18),
 
-                        // Entrar button
+                        // Botão de ação principal.
                         SizedBox(
                           width: 260,
                           child: FilledButton(

@@ -1,3 +1,15 @@
+
+/*
+Propósito: Ecrã de detalhes de um animal para utilizadores e instituições.
+- Mostra galeria (imagens/vídeos), dados principais, descrição, cores e personalidade.
+- Permite favoritar (utilizador) e editar/apagar (instituição), bem como contactar a instituição.
+
+Observações:
+- Obtém o animal do estado global (`AppState`); se faltar, carrega-o de forma assíncrona.
+- Carrega dados adicionais da instituição via Supabase apenas para apresentação.
+- A galeria suporta imagens locais/remotas e vídeos com reprodução inline e controlos simples.
+- Mantém estado UI para expandir/ocultar listas de personalidade e cores.
+*/
 // ignore_for_file: use_build_context_synchronously
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -12,6 +24,7 @@ import '../../models/animal.dart';
 import '../../utils/color_tags.dart';
 import '../../utils/personality_tags.dart';
 
+// Widget de ecrã que apresenta os detalhes completos de um animal.
 class AnimalDetailScreen extends StatefulWidget {
   final String id;
   const AnimalDetailScreen({super.key, required this.id});
@@ -21,7 +34,9 @@ class AnimalDetailScreen extends StatefulWidget {
 }
 
 class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
+  // Controlador da página para percorrer a galeria.
   late final PageController _pageController;
+  // Estados para mostrar/ocultar todas as etiquetas de personalidade e cores.
   bool _showAllPersonalities = false;
   bool _showAllColors = false;
 
@@ -39,9 +54,11 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Obtém o estado global e tenta resolver o animal pelo id.
     final app = context.watch<AppState>();
     final Animal? animal = app.animals.byIdSync(widget.id);
 
+    // Se o animal ainda não estiver no estado, tenta carregá-lo e mostra um indicador.
     if (animal == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final app2 = Provider.of<AppState>(context, listen: false);
@@ -53,10 +70,12 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       );
     }
 
+    // Flags de conveniência para UI/ações.
     final isFav = app.isFav(animal.id);
     final isOrg = app.role == UserRole.org;
 
-    Widget buildGallery() {
+  // Constrói a galeria do animal (imagens/vídeos) com navegação por página.
+  Widget buildGallery() {
       if (animal.media.isEmpty) {
         return const SizedBox(
           height: 260,
@@ -70,6 +89,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
         itemBuilder: (_, index) {
           final m = animal.media[index];
           if (m.type == 'image') {
+            // Imagem remota com placeholder/erro simples.
             if (m.path.startsWith('http')) {
               return Image.network(
                 m.path,
@@ -82,13 +102,16 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                   const ColoredBox(color: Colors.black12),
               );
             }
+            // Imagem local.
             return Image.file(File(m.path), fit: BoxFit.cover);
           }
+          // Vídeo inline com controlos.
           return _InlineVideo(path: m.path);
         },
       );
     }
 
+    // Cores do tema utilizadas no ecrã.
     final colorScheme = Theme.of(context).colorScheme;
     final primary = colorScheme.primary;
     final surface = colorScheme.surface;
@@ -105,6 +128,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
           onPressed: () => Navigator.maybePop(context),
         ),
         actions: [
+          // Utilizador: pode adicionar/remover favoritos.
           if (!isOrg)
             IconButton(
               tooltip: isFav
@@ -115,6 +139,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                 color: isFav ? Colors.amber.shade400 : colorScheme.onPrimary,
               ),
               onPressed: () {
+                // Visitante: pede criação de conta antes de favoritar.
                 if (app.isGuest) {
                   showDialog(
                     context: context,
@@ -128,10 +153,12 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     ),
                   );
                 } else {
+                  // Alterna estado de favorito.
                   app.toggleFav(animal.id);
                 }
               },
             ),
+          // Instituição: botões para editar e apagar o animal.
           if (isOrg) ...[
             IconButton(
               tooltip: 'Editar',
@@ -172,7 +199,6 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       ),
       body: Column(
         children: [
-          // IMAGEM
           Container(
             color: primary,
             child: SizedBox(
@@ -180,8 +206,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: buildGallery(), // sem arredondado
+                    child: buildGallery(),
                   ),
+                  // Navegação manual na galeria quando há mais de um item.
                   if (animal.media.length > 1)
                     Align(
                       alignment: Alignment.centerLeft,
@@ -219,7 +246,6 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
             ),
           ),
 
-          // DETALHES
           Expanded(
             child: Container(
               color: surface,
@@ -229,6 +255,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Cartão com informação estruturada (factos, cor, personalidade, características).
                     _buildInfoCard(context, animal, primary),
                     const SizedBox(height: 20),
                     Text(
@@ -240,6 +267,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    // Lista de pontos da descrição, ou mensagem alternativa.
                     if (animal.descricao.trim().isNotEmpty)
                       _characteristicsList(animal.descricao)
                     else
@@ -257,10 +285,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    // Busca pontual à instituição do animal no Supabase para mostrar morada/horário/contatos.
                     FutureBuilder<dynamic>(
                       future: () async {
                         try {
-                          // Get org_id from animals table (animal model doesn't store it)
                           final row = await Supabase.instance.client.from('animals').select('org_id').eq('id', animal.id).maybeSingle();
                           if (row == null) return null;
                           final orgId = row['org_id'];
@@ -279,6 +307,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         if (org == null) {
                           return const Text('Sem informações da instituição.', style: TextStyle(color: Colors.black54));
                         }
+                        // Extrai campos comuns com fallback para nomes alternativos.
                         final address = (org['address'] ?? org['morada'] ?? '') as String? ?? '';
                         final hours = (org['hours'] ?? org['horario'] ?? org['service_hours'] ?? '') as String? ?? '';
                         final phone = (org['phone'] ?? org['contacts'] ?? org['contact'] ?? '') as String? ?? '';
@@ -287,6 +316,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Morada com atalho para abrir no Google Maps.
                             if (address.isNotEmpty) ...[
                               GestureDetector(
                                 onTap: () async {
@@ -306,18 +336,22 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                             ],
+                            // Horário
                             if (hours.isNotEmpty) ...[
                               Row(children: [const Icon(Icons.access_time, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(hours))]),
                               const SizedBox(height: 8),
                             ],
+                            // Telefone
                             if (phone.isNotEmpty) ...[
                               Row(children: [const Icon(Icons.phone, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(phone))]),
                               const SizedBox(height: 8),
                             ],
+                            // E-mail
                             if (contactEmail.isNotEmpty) ...[
                               Row(children: [const Icon(Icons.email, size: 18, color: Colors.black54), const SizedBox(width: 8), Expanded(child: Text(contactEmail))]),
                               const SizedBox(height: 8),
                             ],
+                            // Website com abertura no navegador.
                             if (website.isNotEmpty) ...[
                               GestureDetector(
                                 onTap: () async {
@@ -337,7 +371,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         );
                       },
                     ),
-                    SizedBox(height: isOrg ? 24 : 80), // espaço para o botão fixo (apenas quando há botão)
+                    // Espaçamento extra quando a instituição tem ações no topo.
+                    SizedBox(height: isOrg ? 24 : 80),
                   ],
                 ),
               ),
@@ -346,7 +381,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
         ],
       ),
 
-      // BOTÃO FIXO EM BAIXO
+      // Barra inferior: botão para contactar a instituição (só para utilizadores).
       bottomNavigationBar: isOrg
           ? null
           : SafeArea(
@@ -366,6 +401,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     onPressed: () {
                       final user = Supabase.instance.client.auth.currentUser;
                       if (user == null) {
+                        // Sem sessão: pedir registo antes de contactar.
                         showDialog(
                           context: context,
                           builder: (_) => AlertDialog(
@@ -378,6 +414,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                           ),
                         );
                       } else {
+                        // Com sessão: abre chat com a instituição relativo ao animal.
                         final userId = user.id;
                         context.push('/chat/${animal.id}/$userId');
                       }
@@ -393,16 +430,16 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     );
   }
 
-  // -------- Info Card --------
 
   Widget _buildInfoCard(
     BuildContext context,
     Animal animal,
     Color primary,
   ) {
+    // Cor de destaque suave baseada na primária do tema.
     final accent = primary.withAlpha((0.85*255).round());
 
-    // Campos opcionais: só usa se existirem na classe Animal.
+    // Campos opcionais que podem ou não existir no modelo.
     bool? vacinado;
     String? expVida;
     List<String> personalidade = [];
@@ -412,7 +449,6 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     } catch (_) {}
 
     try {
-      // suporte a diferentes nomes: expectativaVidaAnos, expectativaVida, life_expectancy_years
       final ev = (animal as dynamic).expectativaVidaAnos ?? (animal as dynamic).expectativaVida ?? (animal as dynamic).life_expectancy_years;
       if (ev != null) {
         if (ev is int) {
@@ -439,6 +475,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
         }
       }
     } catch (_) {}
+    // Campos de texto livres adicionais.
     String? cor;
     String? caracteristicas;
     try {
@@ -448,6 +485,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       caracteristicas = (animal as dynamic).caracteristicas as String?;
     } catch (_) {}
 
+    // Factos principais apresentados em grelha.
     final facts = [
       _Fact(label: 'Animal', value: animal.tipo),
       _Fact(label: 'Nome', value: animal.nome),
@@ -473,8 +511,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
           children: [
             Text('Detalhes', style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(height: 12),
+            // Grelha com factos base (tipo, sexo, idade, etc.).
             _factGrid(facts, accent),
 
+            // Características em texto corrido (opcional).
             if (caracteristicas != null && caracteristicas.trim().isNotEmpty) ...[
               const SizedBox(height: 12),
               Text('Características', style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
@@ -485,6 +525,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
             const SizedBox(height: 12),
             Text('Cor', style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
+            // Etiquetas de cor com opção de expandir.
             if (cor == null || cor.trim().isEmpty)
               _mutedText('—')
             else
@@ -493,6 +534,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
             const SizedBox(height: 12),
             Text('Personalidade', style: TextStyle(color: accent, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
+            // Etiquetas de personalidade coloridas e expansíveis.
             if (personalidade.isNotEmpty)
               _personalityTagsRow(personalidade, accent)
             else
@@ -505,6 +547,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
 
 
 
+  // Apresenta etiquetas de personalidade; pode mostrar apenas 3 e expandir/ocultar.
   Widget _personalityTagsRow(List<String> personalities, Color accent) {
     final displayedPersonalities = _showAllPersonalities ? personalities : personalities.take(3).toList();
     final hasMore = personalities.length > 3;
@@ -565,6 +608,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     );
   }
 
+  // Apresenta etiquetas de cor a partir de CSV; pode mostrar apenas 3 e expandir/ocultar.
   Widget _colorTagsRowStyled(String? corCsv, Color accent) {
     final tags = corCsv == null || corCsv.trim().isEmpty
         ? <String>[]
@@ -634,6 +678,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     );
   }
 
+  // Grelha responsiva de dois campos por linha com espaçamento.
   Widget _factGrid(List<_Fact> facts, Color accent) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -647,6 +692,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     );
   }
 
+  // Cartão de um único facto (rótulo + valor).
   Widget _factTile(_Fact fact, Color accent) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -666,7 +712,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     );
   }
 
+  // Texto atenuado para valores em falta.
   Widget _mutedText(String text) => Text(text, style: TextStyle(color: Colors.black54));
+  // Converte a descrição em lista de pontos simples.
   Widget _characteristicsList(String desc) {
     final parts = desc
         .split(RegExp(r'[\n,;]'))
@@ -709,6 +757,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     );
   }
 
+  // Botão circular translúcido para navegação na galeria.
   Widget _navCircleButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -736,6 +785,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 }
 
+// Player de vídeo simples embutido na galeria, com play/pause e loop.
 class _InlineVideo extends StatefulWidget {
   final String path;
   const _InlineVideo({required this.path});
@@ -745,6 +795,7 @@ class _InlineVideo extends StatefulWidget {
 }
 
 class _InlineVideoState extends State<_InlineVideo> {
+  // Controlador do vídeo (local ou remoto), com loop e som desligado.
   late VideoPlayerController _c;
 
   @override
@@ -756,8 +807,7 @@ class _InlineVideoState extends State<_InlineVideo> {
 
     _c.initialize().then((_) {
       if (!mounted) return;
-      setState(() {});
-      _c
+      setState(() {});      _c
         ..setLooping(true)
         ..setVolume(0)
         ..play();
@@ -772,6 +822,7 @@ class _InlineVideoState extends State<_InlineVideo> {
 
   @override
   Widget build(BuildContext context) {
+    // Enquanto não inicializa, reserva altura da galeria.
     if (!_c.value.isInitialized) {
       return const SizedBox(
         height: 260,
@@ -784,6 +835,7 @@ class _InlineVideoState extends State<_InlineVideo> {
         alignment: Alignment.center,
         children: [
           VideoPlayer(_c),
+          // Botão flutuante para alternar reprodução/pausa.
           Positioned(
             bottom: 8,
             right: 8,
@@ -813,6 +865,7 @@ class _InlineVideoState extends State<_InlineVideo> {
   }
 }
 
+// Estrutura simples para apresentar pares rótulo/valor no cartão de detalhes.
 class _Fact {
   final String label;
   final String value;

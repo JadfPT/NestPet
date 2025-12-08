@@ -1,3 +1,14 @@
+/*
+Propósito: Ecrã de perfil da instituição (org) para gestão da conta.
+- Mostra avatar, nome e email; permite editar conta e dados da instituição.
+- Acede a ajuda, política de privacidade, suporte por email e terminar sessão.
+
+Observações:
+- Usa Supabase para obter o utilizador atual e metadados (ex: avatar).
+- Carrega dados da organização com um Future para controlar o estado de carregamento.
+- Navegação com GoRouter e MaterialPageRoute para ecrãs de edição.
+- Lançamento de email via `url_launcher` com esquema `mailto:`.
+*/
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -9,16 +20,19 @@ import '../../providers/app_state.dart';
 import 'edit_org_screen.dart';
 import '../common/edit_account_screen.dart';
 
+// Ecrã de perfil para contas do tipo instituição/organização.
 class OrgProfileScreen extends StatelessWidget {
   const OrgProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Dados básicos do utilizador atuais (email e nome de exibição).
     final supa = Supabase.instance.client.auth.currentUser;
     final email = supa?.email ?? '—';
     final display = context.watch<AppState>().displayName ?? supa?.userMetadata?['displayName'] ?? supa?.userMetadata?['name'] ?? 'Instituição';
     final primary = Theme.of(context).colorScheme.primary;
 
+    // Future que carrega o registo da organização associado ao utilizador.
     final orgFuture = () async {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return null;
@@ -26,6 +40,7 @@ class OrgProfileScreen extends StatelessWidget {
       return org;
     }();
 
+    // Abre o cliente de email para contactar o suporte.
     void contactSupport() {
       final Uri emailUri = Uri(
         scheme: 'mailto',
@@ -36,11 +51,13 @@ class OrgProfileScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      // Título destacado com cor primária.
       appBar: AppBar(title: Text('Perfil', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           const SizedBox(height: 12),
+          // Cartão de cabeçalho do perfil: avatar, nome, email e botão editar conta.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Card(
@@ -50,6 +67,7 @@ class OrgProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
+                    // Determina a imagem do avatar a partir dos metadados do utilizador.
                     Builder(builder: (c) {
                       final meta = supa?.userMetadata;
                       dynamic raw = meta != null ? meta['avatar_url'] : null;
@@ -68,6 +86,7 @@ class OrgProfileScreen extends StatelessWidget {
                       );
                     }),
                     const SizedBox(width: 12),
+                    // Nome de exibição e email do utilizador.
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,6 +97,7 @@ class OrgProfileScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // Botão para editar os dados da conta (nome, email, etc.).
                     IconButton(onPressed: () async {
                       final res = await Navigator.push(context, MaterialPageRoute(builder: (_) => const EditAccountScreen()));
                       if (res == true) {
@@ -92,6 +112,7 @@ class OrgProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           const SizedBox(height: 16),
+          // Cartão com lista de opções da instituição (detalhes, ajuda, etc.).
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Card(
@@ -99,6 +120,7 @@ class OrgProfileScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: [
+                  // Aguarda o carregamento de dados da organização antes de mostrar as opções.
                   FutureBuilder<dynamic>(
                     future: orgFuture,
                     builder: (context, snap) {
@@ -110,16 +132,17 @@ class OrgProfileScreen extends StatelessWidget {
                       }
                       return Column(
                         children: [
+                          // Abre o ecrã para editar os detalhes da instituição.
                           ListTile(
                             leading: const Icon(Icons.info_outline),
                             title: const Text('Detalhes'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () async {
-                              // Open edit screen for organization details
                               await Navigator.push(context, MaterialPageRoute(builder: (_) => const EditOrgScreen()));
                             },
                           ),
                           const Divider(height: 1),
+                          // Abre um diálogo com instruções de ajuda para instituições.
                           ListTile(
                             leading: const Icon(Icons.help_outline),
                             title: const Text('Ajuda'),
@@ -151,6 +174,7 @@ class OrgProfileScreen extends StatelessWidget {
                             ),
                           ),
                           const Divider(height: 1),
+                          // Mostra a política de privacidade resumida.
                           ListTile(
                             leading: const Icon(Icons.lock_outline),
                             title: const Text('Privacidade'),
@@ -184,6 +208,7 @@ class OrgProfileScreen extends StatelessWidget {
                             ),
                           ),
                           const Divider(height: 1),
+                          // Abre o cliente de email para suporte.
                           ListTile(
                             leading: const Icon(Icons.support_agent_outlined),
                             title: const Text('Contactar suporte'),
@@ -191,6 +216,7 @@ class OrgProfileScreen extends StatelessWidget {
                             onTap: contactSupport,
                           ),
                           const Divider(height: 1),
+                          // Termina a sessão e volta ao ecrã de boas-vindas.
                           ListTile(
                             leading: const Icon(Icons.logout),
                             title: const Text('Terminar sessão'),
@@ -208,6 +234,7 @@ class OrgProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          // Secção com informação da aplicação (ex.: versão).
           Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('App', style: Theme.of(context).textTheme.titleSmall)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

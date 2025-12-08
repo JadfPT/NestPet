@@ -1,3 +1,13 @@
+/*
+Propósito: Estado global da aplicação (papel do utilizador, favoritos e dados).
+- Centraliza papel (user/org), nome de exibição, favoritos e acesso a repositórios.
+- Fornece métodos de login/logout e operações sobre animais e favoritos.
+
+Observações:
+- Integra com Supabase (auth, perfis) e repositórios específicos (animais, chat, favoritos).
+- Usa `SessionService` para persistir o papel entre sessões quando necessário.
+- Notifica ouvintes (`notifyListeners`) após mudanças para atualizar UI.
+*/
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/session_service.dart';
@@ -6,24 +16,29 @@ import '../data/supabase_chat_repository.dart';
 import '../data/supabase_favorites_repository.dart';
 import '../models/animal.dart';
 
+// Papel do utilizador
 enum UserRole { user, org }
 
+// Estado principal da aplicação.
 class AppState extends ChangeNotifier {
+  // Papel atual e nome de exibição.
   UserRole? role;
   String? displayName;
+  // Repositórios de dados.
   final animals = SupabaseAnimalRepository();
   final chat = SupabaseChatRepository();
   final favs = SupabaseFavoritesRepository();
 
+  // Cache local de favoritos (ids de animais).
   final Set<String> _favIds = {};
 
-  // Helper: verifica se é convidado (não autenticado)
+  // Indica se está em modo convidado (sem utilizador autenticado).
   bool get isGuest => Supabase.instance.client.auth.currentUser == null;
 
+  // Inicializa repositórios, carrega favoritos e determina papel/displayName.
   Future<void> init() async {
     await animals.init();
     await favs.init();
-    // carregar favoritos do Supabase para o user atual (se existir)
     final userId = Supabase.instance.client.auth.currentUser?.id;
     _favIds.clear();
     if (userId != null) {
@@ -31,29 +46,27 @@ class AppState extends ChangeNotifier {
       _favIds.addAll(list);
     }
 
-    // If Supabase has a restored session, derive role from server metadata
     final supaUser = Supabase.instance.client.auth.currentUser;
     if (supaUser != null) {
-      // expose displayName for UI binding
       try {
         displayName = supaUser.userMetadata?['displayName'] ?? supaUser.userMetadata?['name'];
       } catch (_) {
         displayName = null;
       }
-      // prefer server-side metadata if present
       try {
         final meta = supaUser.userMetadata;
         final serverRole = meta != null && meta['role'] != null ? meta['role'] as String? : null;
         if (serverRole != null) {
+          // Se metadados têm papel, usa-o diretamente.
           role = serverRole == 'org' ? UserRole.org : UserRole.user;
           notifyListeners();
           return;
         }
       } catch (_) {
-        // ignore
+        // ignorar
       }
 
-      // fallback to locally persisted role
+      // Caso não exista nos metadados, tenta carregar da sessão.
       final saved = await SessionService.loadRole();
       if (saved != null) {
         role = saved == 'org' ? UserRole.org : UserRole.user;
@@ -61,31 +74,27 @@ class AppState extends ChangeNotifier {
         return;
       }
 
-      // default to user role if nothing else indicates org
+      // Por omissão, assume utilizador.
       role = UserRole.user;
       notifyListeners();
     }
   }
 
+  // Define papel e refresca dados após login; atualiza favoritos.
   void login(UserRole r) {
     role = r;
-    // refresh display name on login
     try {
       displayName = Supabase.instance.client.auth.currentUser?.userMetadata?['displayName'] ?? Supabase.instance.client.auth.currentUser?.userMetadata?['name'];
     } catch (_) {
       displayName = null;
     }
-    // persist role so it can be restored on app restart
     SessionService.saveRole(r == UserRole.org ? 'org' : 'user');
 
-    // refresh animals from server based on new role
     animals.refresh().then((_) {
       notifyListeners();
     }).catchError((_) {
-      // ignore errors refreshing animals
     });
 
-    // refresh favorites from server for the logged-in user (background)
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
       favs.getFavorites(userId).then((list) {
@@ -93,21 +102,21 @@ class AppState extends ChangeNotifier {
         _favIds.addAll(list);
         notifyListeners();
       }).catchError((_) {
-        // ignore errors refreshing favorites
+        // ignorar
       });
     }
 
     notifyListeners();
   }
 
+  // Termina sessão: tenta signOut, limpa caches/estado e notifica.
   void logout() {
-    // Sign out from Supabase (fire-and-forget) and clear persisted role
     try {
       Supabase.instance.client.auth.signOut().catchError((_) {});
     } catch (_) {}
     role = null;
     
-      // Clear cached data to prevent showing previous user's data
+        // Limpa repositório de animais e favoritos.
         animals.clear();
       _favIds.clear();
     
@@ -116,22 +125,24 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Altera nome de exibição e notifica.
   void setDisplayName(String? name) {
     displayName = name;
     notifyListeners();
   }
 
-  // Favoritos (só user)
+  // Lista de animais favoritos.
   List<Animal> favorites() {
     final all = animals.all();
     return all.where((a) => _favIds.contains(a.id)).toList();
   }
 
+  // Verifica se um id está nos favoritos.
   bool isFav(String id) => _favIds.contains(id);
 
+  // Alterna favorito: atualiza localmente e sincroniza com repositório.
   Future<void> toggleFav(String id) async {
     if (role == UserRole.org || isGuest) return;
-    // Toggle locally immediately so UI responds even without network/session
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final removing = _favIds.contains(id);
     if (removing) {
@@ -141,7 +152,6 @@ class AppState extends ChangeNotifier {
     }
     notifyListeners();
 
-    // Persist to Supabase if we have a logged-in user. Fail silently on errors.
     if (userId != null) {
       try {
         if (removing) {
@@ -150,12 +160,12 @@ class AppState extends ChangeNotifier {
           await favs.addFavorite(userId, id);
         }
       } catch (_) {
-        // ignore network errors for now
+        // ignorar
       }
     }
   }
 
-  // CRUD
+  // Operações básicas sobre animais que notificam UI.
   Future<void> addAnimal(Animal a) async { await animals.add(a); notifyListeners(); }
   Future<void> updateAnimal(Animal a) async { await animals.updateAnimal(a); notifyListeners(); }
   Future<void> deleteAnimal(String id) async { await animals.delete(id); notifyListeners(); }

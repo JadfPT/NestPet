@@ -1,5 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
+// Propósito geral: Ecrã de perfil do utilizador com informação básica (nome, email, avatar),
+// acesso a ajuda/privacidade, contacto de suporte e ação de terminar sessão.
+// Observações:
+// - Se o utilizador for convidado, algumas ações (editar perfil) pedem criação de conta.
+// - O avatar é lido de metadados do utilizador (avatar_url) quando disponível.
+// - Usa diálogos modais para confirmações e conteúdos informativos.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/app_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// StatefulWidget para gerir interações no ecrã de perfil.
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
 
@@ -20,6 +27,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     super.initState();
   }
 
+  // Mostra diálogo de confirmação genérico com título e corpo, devolve true/false.
   Future<bool?> _confirm(BuildContext ctx, String title, String body) {
     return showDialog<bool>(
       context: ctx,
@@ -34,6 +42,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  // Abre cliente de email com assunto predefinido para contactar suporte.
   void _contactSupport() {
     final Uri emailUri = Uri(
       scheme: 'mailto',
@@ -47,17 +56,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Obtém dados do utilizador atual e preferências de tema.
     final supa = Supabase.instance.client.auth.currentUser;
     final email = supa?.email ?? '—';
     final display = context.watch<AppState>().displayName ?? supa?.userMetadata?['displayName'] ?? supa?.userMetadata?['name'] ?? 'Utilizador';
     final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
+      // AppBar com título estilizado.
       appBar: AppBar(title: Text('Perfil', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           const SizedBox(height: 12),
+          // Cartão com avatar, nome e email, e botão para editar perfil.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Card(
@@ -68,6 +80,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: Row(
                   children: [
                     Builder(builder: (c) {
+                      // Resolve URL do avatar a partir dos metadados; fallback para inicial do nome.
                       final meta = supa?.userMetadata;
                       dynamic raw = meta != null ? meta['avatar_url'] : null;
                       String? avatarUrl;
@@ -95,6 +108,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ],
                       ),
                     ),
+                    // Editar perfil: se convidado, sugere criar conta; senão navega para edição.
                     IconButton(
                       onPressed: () {
                         final app = Provider.of<AppState>(context, listen: false);
@@ -124,6 +138,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
 
           const SizedBox(height: 16),
+          // Cartão com itens de ajuda, privacidade, contacto de suporte e logout.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Card(
@@ -131,6 +146,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Column(
                 children: [
+                  // Ajuda: mostra diálogo com texto informativo.
                   ListTile(
                     leading: const Icon(Icons.help_outline),
                     title: const Text('Ajuda'),
@@ -170,6 +186,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   ),
                   const Divider(height: 1),
+                  // Privacidade: mostra diálogo com política resumida.
                   ListTile(
                     leading: const Icon(Icons.lock_outline),
                     title: const Text('Privacidade'),
@@ -217,6 +234,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   ),
                   
+                  // Contactar suporte via email.
                   ListTile(
                     leading: const Icon(Icons.support_agent_outlined),
                     title: const Text('Contactar suporte'),
@@ -224,6 +242,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     onTap: _contactSupport,
                   ),
                   const Divider(height: 1),
+                  // Terminar sessão com confirmação.
                   ListTile(
                     leading: const Icon(Icons.logout_outlined),
                     title: const Text('Terminar sessão'),
@@ -242,6 +261,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
 
           const SizedBox(height: 18),
+          // Informação da app (versão).
           Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text('App', style: Theme.of(context).textTheme.titleSmall)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

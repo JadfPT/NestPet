@@ -1,3 +1,13 @@
+// Propósito geral: Ponto de entrada da aplicação NestPet. Inicializa serviços essenciais
+// (Flutter, Supabase, estado da app, deep links), configura tratamento de erros e
+// arranca a UI com tema e roteamento.
+// Observações:
+// - A inicialização do Supabase deve ocorrer antes de usar o cliente.
+// - O listener de estado de autenticação ajusta o papel do utilizador (org/utilizador)
+//   e sincroniza dados iniciais.
+// - Os deep links (esquema nestpet://) são tratados para navegar para ecrãs específicos.
+
+// Importações do Flutter e pacotes usados na app.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,22 +17,25 @@ import 'app_router.dart';
 import 'providers/app_state.dart';
 import 'services/session_service.dart';
 
+// Função principal (entrypoint). Prepara bindings, inicializa Supabase e arranca a app.
 void main() async {
+  // Garante que o Flutter está pronto para operações assíncronas e plugins.
   WidgetsFlutterBinding.ensureInitialized();
-    // Inicializa Supabase: preencha `lib/supabase_config.dart` com as suas chaves.
+    // Inicializa o cliente Supabase com URL e chave pública (anon).
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
     );
 
+  // Tratamento global de erros Flutter para registar/exibir problemas.
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     // ignore: avoid_print
     print(details.exceptionAsString());
   };
 
+  // Cria estado global da aplicação e corre a inicialização (carrega dados necessários).
   final state = AppState();
-  // Inicialização do estado da app — aguardamos para restaurar sessão antes de construir a UI
   try {
     await state.init();
   } catch (e, st) {
@@ -32,15 +45,17 @@ void main() async {
     print(st);
   }
 
-  // Also listen for Supabase auth state changes and restore role if a session appears.
+  // Listener de alterações do estado de autenticação.
+  // Quando o utilizador faz login/logout, ajusta o papel (org/utilizador)
+  // e atualiza a lista de animais.
   Supabase.instance.client.auth.onAuthStateChange.listen((event) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
-      // prefer server metadata role
       try {
         final meta = user.userMetadata;
         final serverRole = meta != null && meta['role'] != null ? meta['role'] as String? : null;
         if (serverRole != null) {
+          // Se o servidor já conhece o papel, aplica-o diretamente.
           state.login(serverRole == 'org' ? UserRole.org : UserRole.user);
           try {
             await state.animals.refresh();
@@ -49,67 +64,64 @@ void main() async {
         }
       } catch (_) {}
 
-      // If server didn't provide role, attempt to sync from locally saved info
-      // (this is useful when the user registered on this device but server
-      // metadata hasn't been set yet). If saved role indicates 'org', try to
-      // update server metadata and create a row in `organizations`.
+      // Caso não haja papel definido no servidor, tenta recuperar do armazenamento local.
       final saved = await SessionService.loadRole();
       if (saved != null && saved == 'org') {
-        // Attempt to update user metadata and create organization row.
         try {
           final orgInfo = await SessionService.loadOrgInfo();
           final name = orgInfo['name'];
           final nif = orgInfo['nif'];
 
-          // Update user metadata on Supabase (if supported by client)
           try {
+            // Atualiza metadados do utilizador com papel e opcionalmente NIF.
             await Supabase.instance.client.auth.updateUser(UserAttributes(data: {'role': 'org', if (nif != null) 'nif': nif}));
           } catch (e) {
-            // ignore errors updating metadata (not all supabase clients support it the same way)
+            //ignorar
           }
 
-          // Insert into organizations table, link using user.id if schema supports it
           try {
+            // Insere/atualiza a organização associada ao utilizador.
             final insertData = <String, dynamic>{'name': name ?? 'Unnamed'};
             if (nif != null) insertData['nif'] = nif;
-            // include user_id where possible
             insertData['user_id'] = user.id;
             await Supabase.instance.client.from('organizations').insert(insertData);
-            // cleanup local org info after successful sync
             await SessionService.clearOrgInfo();
           } catch (e) {
-            // if insert fails (e.g., schema doesn't have user_id/nif), ignore
+            //ignorar
           }
 
         } catch (_) {}
 
-        // Finally restore local role so UI switches to org shell immediately
+        // Define papel como organização e atualiza animais.
         state.login(UserRole.org);
         try {
           await state.animals.refresh();
         } catch (_) {}
       } else if (saved != null) {
+        // Recupera papel guardado (org/user) e atualiza animais.
         state.login(saved == 'org' ? UserRole.org : UserRole.user);
         try {
           await state.animals.refresh();
         } catch (_) {}
         
       } else {
+        // Por omissão, papel de utilizador normal.
         state.login(UserRole.user);
       }
     }
   });
 
-  // Listen for deep links (email confirmation, etc.)
+  // Inicializa tratamento de deep links (ligações externas que abrem rotas internas).
   _initDeepLinks();
 
+  // Arranca a aplicação Flutter com o estado preparado.
   runApp(NestPetApp(state: state));
 }
 
+// Configura o gestor de deep links: trata link inicial e escuta links em runtime.
 void _initDeepLinks() async {
   final appLinks = AppLinks();
   
-  // Check initial link if app was opened via deep link
   try {
     final uri = await appLinks.getInitialLink();
     if (uri != null) {
@@ -117,34 +129,33 @@ void _initDeepLinks() async {
     }
   } catch (_) {}
 
-  // Listen for links while app is running
   appLinks.uriLinkStream.listen((uri) {
     _handleDeepLink(uri);
   });
 }
 
+// Interpreta um URI de deep link e navega para a rota correspondente.
 void _handleDeepLink(Uri uri) {
-  // nestpet://welcome -> redirect to welcome screen
   if (uri.scheme == 'nestpet' && uri.host == 'welcome') {
     router.go('/welcome');
   }
-  // Adicione outros paths se necessário (ex: nestpet://reset para password reset)
 }
 
+// Widget raiz da app. Fornece estado com Provider e configura tema e router.
 class NestPetApp extends StatelessWidget {
   final AppState state;
   const NestPetApp({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
-      // Definindo esquema de cores fixo conforme solicitado:
-      // Cor principal: #824822 -> 0xFF824822
-      // Cor de fundo: #F2E8D7 -> 0xFFF2E8D7
+
+      // Define esquema de cores baseado numa cor de semente, ajustando primária e surface.
       final colorScheme = ColorScheme.fromSeed(seedColor: const Color(0xFF824822)).copyWith(
         primary: const Color(0xFF824822),
         surface: const Color(0xFFF2E8D7),
       );
 
+      // Injeta o estado global e configura MaterialApp com tema e roteamento.
       return ChangeNotifierProvider.value(
         value: state,
         child: MaterialApp.router(
@@ -154,6 +165,7 @@ class NestPetApp extends StatelessWidget {
             colorScheme: colorScheme,
             scaffoldBackgroundColor: colorScheme.surface,
             useMaterial3: true,
+            // Personaliza NavigationBar (ícones/labels) conforme estado selecionado.
             navigationBarTheme: NavigationBarThemeData(
               backgroundColor: colorScheme.surface,
               indicatorColor: colorScheme.primary,

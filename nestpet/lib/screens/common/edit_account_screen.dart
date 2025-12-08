@@ -1,3 +1,13 @@
+/*
+Propósito: Ecrã para editar dados da conta do utilizador/instituição.
+- Permite alterar nome, avatar, password e pedir eliminação da conta.
+- Evita perder alterações com confirmação quando existem mudanças não guardadas.
+
+Observações:
+- Integra com Supabase: atualiza perfis, avatar (storage) e executa remoção.
+- Usa `UnsavedChangesGuard` para gerir saída segura com prompt.
+- Mantém estado local `_saving` para desativar botões durante operações.
+*/
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:io';
@@ -10,6 +20,7 @@ import '../../widgets/avatar_picker.dart';
 import '../../widgets/change_password_flow.dart';
 import '../../utils/unsaved_changes_guard.dart';
 
+// Ecrã de edição da conta comum a utilizadores e instituições.
 class EditAccountScreen extends StatefulWidget {
   const EditAccountScreen({super.key});
 
@@ -18,16 +29,23 @@ class EditAccountScreen extends StatefulWidget {
 }
 
 class _EditAccountScreenState extends State<EditAccountScreen> {
+  // Chave do formulário.
   final _formKey = GlobalKey<FormState>();
+  // Controlador do campo de nome.
   late TextEditingController _nameCtrl;
+  // Estado de operação em curso.
   bool _saving = false;
+  // Valor inicial para detetar alterações.
   late String _initialName;
+  // Indica se a conta é de instituição (para iniciais).
   bool _isOrg = false;
+  // Guarda de alterações não guardadas.
   UnsavedChangesGuard? _guard;
 
   @override
   void initState() {
     super.initState();
+    // Pré-carrega nome a partir dos metadados e regista guarda.
     final user = Supabase.instance.client.auth.currentUser;
     final name = user?.userMetadata?['displayName'] ?? user?.userMetadata?['name'] ?? '';
     _nameCtrl = TextEditingController(text: name);
@@ -36,6 +54,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     _registerGuard();
   }
 
+  // Se existir instituição, tenta usar o nome da organização como nome inicial.
   Future<void> _maybeLoadOrgName() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -44,7 +63,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       if (org != null) {
         _isOrg = true;
         final orgName = (org['name'] ?? org['nome'] ?? '').toString();
-        // Only use org name as a fallback when there is no display name saved
         if (_nameCtrl.text.trim().isEmpty && orgName.isNotEmpty) {
           _nameCtrl.text = orgName;
           _initialName = orgName;
@@ -56,6 +74,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
   @override
   void dispose() {
+    // Remove guarda e liberta controlador.
     if (_guard != null) {
       UnsavedChangesRegistry.instance.clear(_guard!);
     }
@@ -63,6 +82,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     super.dispose();
   }
 
+  // Regista guarda que pergunta guardar/descartar quando há alterações.
   void _registerGuard() {
     _guard = UnsavedChangesGuard(
       hasUnsaved: () => _nameCtrl.text.trim() != _initialName,
@@ -88,13 +108,13 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     UnsavedChangesRegistry.instance.register(_guard!);
   }
 
+  // Guarda nome no Supabase (auth + profiles) e atualiza estado local.
   Future<bool> _save() async {
     if (!_formKey.currentState!.validate()) return false;
     setState(() => _saving = true);
     try {
       final name = _nameCtrl.text.trim();
       await Supabase.instance.client.auth.updateUser(UserAttributes(data: {'displayName': name, 'name': name}));
-      // try to persist into profiles (may be blocked by RLS)
       try {
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null) {
@@ -118,6 +138,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     }
   }
 
+  // Envia/limpa avatar no storage e atualiza perfis.
   Future<void> _uploadAvatar(File? file) async {
     if (file == null) {
       try {
@@ -166,6 +187,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     }
   }
 
+  // Fluxo de eliminação da conta: confirmações, reautenticação e remoção de dados.
   Future<void> _requestDelete() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -181,7 +203,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     if (ok != true) return;
 
     final client = Supabase.instance.client;
-    // Ask for password to confirm identity before deleting account
     final password = await showDialog<String?>(
       context: context,
       builder: (c) {
@@ -202,19 +223,13 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     );
     if (password == null || password.isEmpty) return;
 
-    // Re-authenticate by signing in with email + password. If this fails,
-    // abort the delete operation.
     final email = client.auth.currentUser?.email;
     if (email == null) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro: utilizador não autenticado')));
       return;
     }
     try {
-      // Attempt sign-in with password to verify credentials. This will replace
-      // the current session with a fresh session if successful, which is fine
-      // since we're about to remove the account.
       await client.auth.signInWithPassword(email: email, password: password);
-      // Confirm session updated
       final currentEmail = client.auth.currentUser?.email;
       if (currentEmail == null || currentEmail != email) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password inválida')));
@@ -224,15 +239,10 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password inválida')));
       return;
     }
-    // Try calling the server-side RPC which deletes the authenticated user's data
-    // and the corresponding auth.users entry. This function must be created in
-    // Supabase SQL Editor as an admin (see db/migrations/0003_remove_account_rpc.sql).
     try {
-      // Try to invoke server RPC (created with admin privileges) to remove
-      // the authenticated user's account and related rows.
+
       final rpcRes = await client.rpc('remove_account_and_data').select();
-      // rpcRes might be a PostgrestResponse or dynamic. Check for an error
-      // in a defensive way and run fallback if present.
+
       dynamic rpcError;
       try {
         rpcError = (rpcRes as dynamic).error;
@@ -240,7 +250,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         rpcError = null;
       }
       if (rpcError != null) {
-        // run fallback deletes silently
         try {
           final uid = client.auth.currentUser?.id;
           if (uid != null) {
@@ -252,13 +261,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             await client.from('profiles').delete().eq('id', uid);
           }
         } catch (e) {
-          // swallow but log
           // ignore: avoid_print
           print('Fallback delete error: $e');
         }
       }
     } catch (e) {
-      // If RPC invocation itself throws, attempt best-effort deletes locally
       try {
         final uid = client.auth.currentUser?.id;
         if (uid != null) {
@@ -275,7 +282,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       }
     }
 
-    // Finally sign out locally
     try {
       await client.auth.signOut();
     } catch (_) {}
@@ -290,11 +296,13 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Dados atuais do utilizador para avatar e nome.
     final user = Supabase.instance.client.auth.currentUser;
     final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
     final display = user?.userMetadata?['displayName'] ?? user?.userMetadata?['name'] ?? '';
 
-    // WillPopScope deprecated; suppress info until further migration to PopScope
+
+    // Bloqueia gesto de voltar quando existem alterações não guardadas.    
     // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
@@ -310,18 +318,22 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         body: SingleChildScrollView(
           padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 16 + MediaQuery.of(context).viewInsets.bottom),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Cartão com avatar e formulário do nome.
             Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
+                  // Seletor de avatar com iniciais.
                   Center(child: AvatarPicker(imageUrl: avatarUrl, initials: _isOrg ? 'I' : (display.isNotEmpty ? display[0] : 'U'), radius: 52, onImage: (file) => _uploadAvatar(file))),
                   const SizedBox(height: 12),
                   Form(
                     key: _formKey,
                     child: Column(children: [
+                      // Campo de nome.
                       TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nome de utilizador'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Preenche o nome' : null),
                       const SizedBox(height: 16),
+                      // Botão para guardar mudanças.
                       SizedBox(width: double.infinity, child: FilledButton(onPressed: _saving ? null : () async { final ok = await _save(); if (ok && context.mounted) Navigator.pop(context); }, style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)), padding: const EdgeInsets.symmetric(vertical: 14)), child: _saving ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Guardar mudanças'))),
                     ]),
                   ),
@@ -330,6 +342,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             ),
 
             const SizedBox(height: 18),
+            // Ação para alterar password.
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -343,6 +356,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            // Ação para pedir eliminação da conta.
             SizedBox(width: double.infinity, child: OutlinedButton.icon(style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)), side: const BorderSide(color: Colors.redAccent)), onPressed: _requestDelete, icon: const Icon(Icons.delete_outline, color: Colors.redAccent), label: const Text('Apagar conta', style: TextStyle(color: Colors.redAccent)))),
           ]),
         ),

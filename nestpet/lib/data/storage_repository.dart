@@ -1,31 +1,38 @@
+/*
+Propósito: Repositório para gerir uploads e URLs de media no Supabase Storage.
+- Faz upload (binário) de imagens/vídeos dos animais e obtém URLs públicas/assinadas.
+
+Observações:
+- Usa o bucket `animal-images`; requer utilizador autenticado para enviar.
+- Implementa tentativas com pequeno retry em falha de upload.
+*/
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StorageRepository {
+  // Cliente Supabase e nome do bucket.
   final _client = Supabase.instance.client;
   final String bucket = 'animal-images';
 
-  /// Faz upload de um ficheiro e devolve a public URL (ou lança em caso de erro).
+  // Faz upload de um ficheiro para `destPath` e devolve URL pública.
   Future<String> uploadAnimalImage(File file, String destPath) async {
-    // Verifica se o cliente está autenticado — uploads exigem role 'authenticated'
+    // Garante que há utilizador autenticado.
     final current = _client.auth.currentUser;
     if (current == null) {
       throw Exception('Usuário não autenticado. Faça login antes de enviar imagens.');
     }
 
+    // Lê bytes do ficheiro local.
     final bytes = await file.readAsBytes();
-    // Debug: mostrar qual o user id que está a tentar enviar
-    // Isso ajuda a confirmar que o cliente está autenticado correctamente.
     // ignore: avoid_print
     print('StorageRepository: current user id=${current.id}');
-    // Faz um retry simples (2 tentativas) para problemas temporários de rede.
+    // Tenta duas vezes o upload, esperando 1s entre tentativas em caso de erro.
     for (var attempt = 1; attempt <= 2; attempt++) {
       try {
         await _client.storage.from(bucket).uploadBinary(destPath, bytes, fileOptions: FileOptions(cacheControl: '3600'));
         final url = _client.storage.from(bucket).getPublicUrl(destPath);
         return url;
       } catch (e, st) {
-        // Log detalhado para debugging
         // ignore: avoid_print
         print('StorageRepository.uploadAnimalImage attempt $attempt failed: $e');
         // ignore: avoid_print
@@ -34,11 +41,10 @@ class StorageRepository {
         await Future.delayed(const Duration(seconds: 1));
       }
     }
-    // nunca acontece, mas para satisfazer o compilador
     throw Exception('Upload failed');
   }
 
-  /// Gera URL assinada (opcional) para ficheiros privados
+  // Cria um URL assinado (temporário) para um caminho do bucket.
   Future<String?> createSignedUrl(String path, {int expiresIn = 3600}) async {
     try {
       final signed = await _client.storage.from(bucket).createSignedUrl(path, expiresIn);

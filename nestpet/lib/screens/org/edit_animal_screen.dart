@@ -1,3 +1,13 @@
+/*
+Propósito: Ecrã para editar os detalhes de um animal da instituição.
+- Permite alterar dados básicos, personalidade, cores e gerir media (imagens/vídeos).
+- Integra com armazenamento para upload e mantém limite de media por animal.
+
+Observações:
+- Carrega animal do `AppState` (cache) e, se necessário, busca assíncrona.
+- Usa `FilePicker` para seleção de ficheiros e `StorageRepository` para envio.
+- Mantém UI fluida com estado local (seleções, sliders, checkboxes) e feedback.
+*/
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +22,7 @@ import '../../utils/color_tags.dart';
 import '../../utils/personality_tags.dart';
 
 class EditAnimalScreen extends StatefulWidget {
+// Ecrã de edição de um animal identificado por `id`.
   final String id;
   const EditAnimalScreen({super.key, required this.id});
 
@@ -19,16 +30,18 @@ class EditAnimalScreen extends StatefulWidget {
   State<EditAnimalScreen> createState() => _EditAnimalScreenState();
 }
 
-// color chips widget removed; edit screen now manages color chips inline
 
 class _EditAnimalScreenState extends State<EditAnimalScreen> {
   final form = GlobalKey<FormState>();
+  // Chave do formulário para validações.
   late Animal a;
-  // form state mirroring AddAnimalScreen so structure matches
+  // Instância do animal em edição.
   final _nomeController = TextEditingController();
+  // Controladores de texto.
   final _descricaoController = TextEditingController();
   final _caracteristicasController = TextEditingController();
   String tipo = 'Cão';
+  // Campos principais do animal.
   String sexo = 'M';
   int idade = 6;
   double peso = 5;
@@ -36,17 +49,19 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   int expectativaVidaAnos = 0;
   bool vacinado = false;
   bool _showAllPersonalities = false;
+  // Estado UI para mostrar/ocultar listas completas.
   bool _showAllColors = false;
   final Set<String> _selectedColors = {};
+  // Selecções de etiquetas.
   final Set<String> _selectedPersonalities = {};
 
   @override
   void initState() {
     super.initState();
     final cached = context.read<AppState>().animals.byIdSync(widget.id);
+    // Tenta obter da cache; se falhar, requisita do repositório e atualiza estado.
     if (cached != null) {
       a = cached;
-      // initialize controllers/state from cached
       _nomeController.text = a.nome;
       _descricaoController.text = a.descricao;
       _caracteristicasController.text = a.caracteristicas;
@@ -58,6 +73,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
       expectativaVidaAnos = a.expectativaVidaAnos;
       vacinado = a.vacinado;
       _selectedColors.addAll(a.cor.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+      // Pré-carrega selecções de cores/personalidade.
       _selectedPersonalities.addAll(a.personalidade.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
     } else {
       a = Animal(id: widget.id, nome: '', tipo: 'Cão', sexo: 'M', idadeMeses: 0, pesoKg: 0.0, tamanho: 'médio', descricao: '', media: []);
@@ -69,6 +85,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   }
 
   Future<void> _pickMedia() async {
+  // Abre seletor de ficheiros e adiciona media (limitada a 10), fazendo upload.
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor inicie sessão antes de enviar imagens.')));
@@ -84,6 +101,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
       String stored;
       try {
         stored = await AnimalRepository.persistPickedFile(path);
+        // Copia/garante acesso ao ficheiro escolhido.
       } catch (e, st) {
         // ignore: avoid_print
         print('persistPickedFile failed: $e');
@@ -94,16 +112,14 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
         }
         continue;
       }
-      // debug: confirmar que o ficheiro existe no caminho copiado
       // ignore: avoid_print
       print('Picked stored path: $stored (exists=${File(stored).existsSync()})');
       a.media.add(MediaItem(path: stored, type: type));
-      // upload para supabase
+      // Adiciona ao modelo local e tenta enviar para armazenamento remoto.
       final filename = stored.split(Platform.pathSeparator).last;
       final dest = 'animals/${a.id}/$filename';
       try {
         final url = await StorageRepository().uploadAnimalImage(File(stored), dest);
-        // substituir local path pelo url
         final idx = a.media.indexWhere((m) => m.path == stored);
         if (idx != -1) a.media[idx].path = url;
       } catch (e, st) {
@@ -135,6 +151,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Row(
+            // Linha com nome e tipo (dropdown).
               children: [
                 Expanded(child: TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome'))),
                 const SizedBox(width: 12),
@@ -147,6 +164,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             const SizedBox(height: 8),
             Row(
+            // Linha com tamanho e sexo (dropdowns).
               children: [
                 Expanded(child: DropdownButtonFormField<String>(initialValue: tamanho, items: const [
                   DropdownMenuItem(value: 'pequeno', child: Text('Pequeno')),
@@ -163,13 +181,16 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
 
             const SizedBox(height: 8),
             Text('Idade (meses): $idade'),
+            // Sliders de idade (meses) e peso (kg).
             Slider(value: idade.toDouble(), min: 0, max: 120, divisions: 120, onChanged: (v)=> setState(()=> idade=v.round())),
             Text('Peso (kg): ${peso.toStringAsFixed(1)}'),
             Slider(value: peso, min: 0.5, max: 100, divisions: 199, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
             TextFormField(controller: _descricaoController, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3),
             const SizedBox(height: 12),
+            // Descrição livre.
             Text('Personalidade', style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
+            // Seleção de personalidade por etiquetas.
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -216,6 +237,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             if (personalityOptions.length > 3)
               Padding(
+            // Mostrar/ocultar todas as personalidades.
                 padding: const EdgeInsets.only(top: 8),
                 child: GestureDetector(
                   onTap: () => setState(() => _showAllPersonalities = !_showAllPersonalities),
@@ -232,6 +254,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
+            // Expectativa de vida e checkbox de vacinação.
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Expectativa de vida (anos): $expectativaVidaAnos'),
                   Slider(value: expectativaVidaAnos.toDouble(), min: 0, max: 30, divisions: 30, onChanged: (v)=> setState(()=> expectativaVidaAnos = v.round())),
@@ -245,8 +268,10 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
             const SizedBox(height: 8),
+            // Características livres.
             Text('Cores', style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
+            // Seleção de cores por etiquetas.
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -293,6 +318,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             ),
             if (kCommonColorTags.length > 6)
               Padding(
+            // Mostrar/ocultar todas as cores.
                 padding: const EdgeInsets.only(top: 8),
                 child: GestureDetector(
                   onTap: () => setState(() => _showAllColors = !_showAllColors),
@@ -309,12 +335,14 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
+            // Botão para adicionar media (máx. 10).
                 FilledButton.icon(onPressed: a.media.length>=10?null:_pickMedia, icon: const Icon(Icons.add_photo_alternate), label: Text('Adicionar media (${a.media.length}/10)')),
               ],
             ),
             const SizedBox(height: 8),
             GridView.builder(
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+            // Grelha de media com remoção por item.
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 8, crossAxisSpacing: 8),
               itemCount: a.media.length,
               itemBuilder: (_, i) {
@@ -327,12 +355,14 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
                               child: m.type == 'image'
                                 ? (m.path.startsWith('http') ? Image.network(m.path, fit: BoxFit.cover, errorBuilder: (c,e,s) => const ColoredBox(color: Colors.black12)) : Image.file(File(m.path), fit: BoxFit.cover))
                                 : (m.path.startsWith('http') ? Container(color: Colors.black12, alignment: Alignment.center, child: const Icon(Icons.play_circle)) : Container(color: Colors.black12, alignment: Alignment.center, child: const Icon(Icons.play_circle))),
+                                // Mostra imagem local/remota; vídeos mostram ícone de play.
                             ),
                     ),
                     Positioned(
                       right: -8, top: -8,
                       child: IconButton(icon: const Icon(Icons.cancel, size: 20), onPressed: () { setState(() { a.media.removeAt(i); }); }),
                     )
+                      // Remover item de media.
                   ],
                 );
               },
@@ -340,7 +370,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () async {
-                // populate model from controllers/state
+            // Botão Guardar: aplica alterações ao modelo e persiste via AppState.
                 a.nome = _nomeController.text.trim();
                 a.descricao = _descricaoController.text.trim();
                 a.personalidade = _selectedPersonalities.join(',');
@@ -376,6 +406,7 @@ class _EditAnimalScreenState extends State<EditAnimalScreen> {
   void dispose() {
     _nomeController.dispose();
     _descricaoController.dispose();
+    // Liberta controladores de texto.
     _caracteristicasController.dispose();
     super.dispose();
   }

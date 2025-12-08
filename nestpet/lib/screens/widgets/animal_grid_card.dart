@@ -1,3 +1,11 @@
+// Propósito geral: Cartão de grelha para apresentar um animal com miniatura (imagem/vídeo),
+// título e ação de favorito opcional.
+// Observações:
+// - Suporta primeira média como vídeo (auto-play mudo em loop) ou imagem (ficheiro/local).
+// - O botão de favorito só aparece para utilizadores normais (não organizações) e pode
+//   pedir registo quando o utilizador é convidado.
+// - O toque no cartão é delegado via callback `onTap` para navegação externa.
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,10 +14,11 @@ import '../../models/animal.dart';
 import '../../providers/app_state.dart';
 import 'package:video_player/video_player.dart';
 
+// Cartão individual usado em grelhas/listas de animais.
 class AnimalGridCard extends StatelessWidget {
   final Animal animal;
   final VoidCallback? onTap;
-  final bool showFav; // <= novo
+  final bool showFav;
 
   const AnimalGridCard({
     super.key,
@@ -20,11 +29,13 @@ class AnimalGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Estado global da app e dados derivado do animal.
     final app = context.watch<AppState>();
     final fav = app.isFav(animal.id);
     final first = animal.media.isNotEmpty ? animal.media.first : null;
     final primary = Theme.of(context).colorScheme.primary;
 
+    // Construtor da miniatura (vídeo/imagem) da primeira média.
     Widget media() {
       if (first == null) return const ColoredBox(color: Colors.black12);
       if (first.type == 'video') return _VideoThumb(path: first.path);
@@ -35,12 +46,13 @@ class AnimalGridCard extends StatelessWidget {
     }
 
     return InkWell(
+      // Tap no cartão propaga para o callback.
       onTap: onTap,
       child: AspectRatio(
         aspectRatio: 1,
         child: Stack(
           children: [
-            // framed image with subtle shadow
+            // Container com borda, sombra suave e conteúdo recortado.
             Positioned.fill(
               child: Container(
                 margin: const EdgeInsets.all(6),
@@ -53,13 +65,14 @@ class AnimalGridCard extends StatelessWidget {
               ),
             ),
 
-            // favorite star top-right
+            // Botão de favorito (apenas para utilizadores, não para organizações), opcional.
             if (showFav && app.role == UserRole.user)
               Positioned(
                 right: 10,
                 top: 10,
                 child: GestureDetector(
                   onTap: () {
+                    // Convidado: sugere criação de conta; autenticado: alterna favorito.
                     if (app.isGuest) {
                       showDialog(
                         context: context,
@@ -80,6 +93,7 @@ class AnimalGridCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     child: Center(
+                      // Animação ao alternar estado de favorito.
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
                         transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
@@ -102,7 +116,7 @@ class AnimalGridCard extends StatelessWidget {
                 ),
               ),
 
-            // subtle gradient overlay + label for readability
+            // Faixa inferior com o nome do animal, sobreposta à miniatura.
             Positioned.fill(
               child: Align(
                 alignment: Alignment.bottomCenter,
@@ -139,6 +153,7 @@ class AnimalGridCard extends StatelessWidget {
   }
 }
 
+// Miniatura de vídeo que inicializa e auto-reproduz em loop, sem som.
 class _VideoThumb extends StatefulWidget {
   final String path;
   const _VideoThumb({required this.path});
@@ -152,6 +167,7 @@ class _VideoThumbState extends State<_VideoThumb> {
   @override
   void initState() {
     super.initState();
+    // Escolhe controlador conforme origem (rede vs ficheiro local) e inicia reprodução.
     if (widget.path.startsWith('http')) {
       _c = VideoPlayerController.networkUrl(Uri.parse(widget.path))
         ..initialize().then((_) { if (mounted) setState(() {}); _c.setVolume(0); _c.setLooping(true); _c.play(); });
@@ -161,9 +177,11 @@ class _VideoThumbState extends State<_VideoThumb> {
     }
   }
   @override
+  // Liberta recursos do controlador ao destruir.
   void dispose() { _c.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) {
+    // Enquanto não inicializar, mostra placeholder; depois encaixa vídeo a cobrir.
     if (!_c.value.isInitialized) return const ColoredBox(color: Colors.black12);
     return FittedBox(fit: BoxFit.cover, child: SizedBox(width: _c.value.size.width, height: _c.value.size.height, child: VideoPlayer(_c)));
   }

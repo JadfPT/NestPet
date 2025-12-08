@@ -1,7 +1,13 @@
+// Propósito geral: Definir etiquetas de cor comuns e um mapeamento para
+// cores específicas usadas na UI (chips/tags, cartões, etc.).
+// Observações:
+// - As etiquetas podem ser alteradas conforme o domínio (cores de animais, etc.).
+// - O mapa usa cores Material e valores hex para tons específicos.
+// - A função utilitária devolve uma cor por defeito se a etiqueta não existir.
+
 import 'package:flutter/material.dart';
 
-/// Lista de cores/tintas comuns para animais (rótulo -> cor real).
-/// Expandida para cobrir um espectro maior de tonalidades.
+// Lista de etiquetas de cor disponíveis.
 const List<String> kCommonColorTags = [
   'Preto',
   'Branco',
@@ -26,6 +32,7 @@ const List<String> kCommonColorTags = [
   'Amarelo',
 ];
 
+// Mapa entre etiqueta e cor (tons definidos para consistência visual).
 final Map<String, Color> kColorTagMap = {
   'Preto': Colors.black,
   'Branco': Colors.white,
@@ -50,6 +57,7 @@ final Map<String, Color> kColorTagMap = {
   'Amarelo': const Color(0xFFFFE082),
 };
 
+// Devolve a cor associada à etiqueta; caso não exista, retorna cinza claro.
 Color colorForTag(String tag) {
   return kColorTagMap[tag] ?? Colors.grey.shade400;
 }

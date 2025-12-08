@@ -1,3 +1,13 @@
+/*
+Propósito: Ecrã da instituição para gerir e visualizar os seus animais.
+- Mostra lista em grelha com pesquisa; permite editar/apagar anúncios.
+- Inclui botão flutuante (overlay) para aceder rapidamente às mensagens.
+
+Observações:
+- Obtém animais do `AppState` e filtra localmente pelo termo de pesquisa. 
+- Usa `OverlayEntry` para posicionar um botão circular acima do conteúdo.
+- Navega com `GoRouter` para edição/adição e mensagens.
+*/
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -8,8 +18,8 @@ import '../../providers/app_state.dart';
 import '../widgets/animal_grid_card.dart';
 import '../widgets/empty_state.dart';
 import '../../models/animal.dart';
-// org screens do not use the user filters sheet
 
+// Ecrã principal de "Os seus animais" (instituição).
 class MyAnimalsScreen extends StatefulWidget {
   const MyAnimalsScreen({super.key});
 
@@ -18,14 +28,17 @@ class MyAnimalsScreen extends StatefulWidget {
 }
 
 class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
+  // Entrada de overlay para o botão flutuante (acesso a mensagens).
   OverlayEntry? _fabOverlay;
+  // Guarda o último padding inferior para evitar reinserções desnecessárias.
   double? _lastFabBottomInset;
-  // orgs don't use filters here
+  // Controlador do campo de pesquisa.
   final TextEditingController _searchController = TextEditingController();
+  // Termo de pesquisa atual (minúsculas/trim aplicado na filtragem).
   String _query = '';
 
+  // Abre as ações (editar/apagar) para um animal em folha modal.
   void _openActions(BuildContext context, Animal a) async {
-    // Remove FAB overlay while modal is open to prevent overlap
     _fabOverlay?.remove();
     _fabOverlay = null;
 
@@ -35,6 +48,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Editar anúncio do animal.
             ListTile(
               leading: const Icon(Icons.edit),
               title: const Text('Editar'),
@@ -43,6 +57,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
                 context.push('/o/edit/${a.id}');
               },
             ),
+            // Apagar anúncio do animal com feedback via SnackBar.
             ListTile(
               leading: const Icon(Icons.delete_forever, color: Colors.red),
               title: const Text('Apagar', style: TextStyle(color: Colors.red)),
@@ -61,7 +76,6 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
       ),
     );
 
-    // Re-insert FAB overlay after modal closes
     if (mounted) {
       _insertFabOverlay();
     }
@@ -70,31 +84,28 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   @override
   void initState() {
     super.initState();
+    // Adia a inserção do overlay para após o primeiro frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _insertFabOverlay();
     });
   }
 
+  // Cria/insere o overlay com botão circular de mensagens ajustado ao padding inferior.
   void _insertFabOverlay() {
     final overlay = Overlay.of(context);
     final bottomInsetRaw = MediaQuery.of(context).viewPadding.bottom;
-    // Use full safe-area inset with a small minimum to match earlier layout
     final bottomInset = math.max(bottomInsetRaw, 16.0);
-    // If inset didn't change and overlay exists, keep it
     if (_fabOverlay != null && _lastFabBottomInset == bottomInset) return;
 
-    // If overlay exists but inset changed, remove it so we can recreate in new position
     _fabOverlay?.remove();
 
     _fabOverlay = OverlayEntry(builder: (ctx) {
       final bottomInsetRaw = MediaQuery.of(context).viewPadding.bottom;
       final bottomInset = math.max(bottomInsetRaw, 16.0);
       final primary = Theme.of(context).colorScheme.primary;
-      // constants removed; use inline sizes
 
-      // compute pill bottom (distance from bottom) — matches pill Positioned(bottom: bottomInset + 8)
+      // Posição vertical do botão relativa a uma pílula imaginária inferior.
       final pillBottom = bottomInset + 8;
-      // place the FAB so it slightly overlaps the pill (closer attachment)
       final desiredFabBottom = pillBottom - 24.0;
 
       return Positioned(
@@ -103,6 +114,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
         child: Material(
           color: Colors.transparent,
           child: GestureDetector(
+            // Atalho para o ecrã de mensagens.
             onTap: () => context.go('/messages'),
               child: Container(
               width: 56.0,
@@ -124,24 +136,22 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Re-evaluate overlay position after dependencies change (e.g. system UI, insets, auth role)
+    // Garante que o overlay é consistente após mudanças de dependências (ex.: tema/insets).
     WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
   }
 
   @override
   void dispose() {
+    // Remove o overlay e liberta o controlador de pesquisa.
     _fabOverlay?.remove();
     _searchController.dispose();
     super.dispose();
   }
 
-
-  // No filter methods: orgs don't expose filters in this screen
-
   @override
   Widget build(BuildContext context) {
+    // Obtém lista atual de animais e aplica filtro pelo termo de pesquisa.
     final app = context.watch<AppState>();
-    // base list and apply search query (name or descricao)
     final baseItems = app.animals.all();
     final items = baseItems.where((a) {
       if (_query.isNotEmpty) {
@@ -160,7 +170,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search input with app avatar on the right (no filters for orgs)
+              // Barra superior com pesquisa e avatar da conta.
               Row(
                 children: [
                   Expanded(
@@ -183,6 +193,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
                                 hintStyle: TextStyle(color: Theme.of(context).colorScheme.primary.withAlpha((0.6*255).round())),
                               ),
                               onChanged: (q) {
+                                // Atualiza termo de pesquisa e refaz filtragem.
                                 setState(() { _query = q.trim(); });
                               },
                             ),
@@ -191,6 +202,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
                           if (_query.isNotEmpty)
                             GestureDetector(
                               onTap: () {
+                                // Limpa pesquisa e resultados.
                                 _searchController.clear();
                                 setState(() { _query = ''; });
                               },
@@ -201,6 +213,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
+                  // Avatar do utilizador (instituição) a partir de Supabase; fallback para ícone.
                   GestureDetector(
                     onTap: () {},
                     child: Builder(builder: (ctx) {
@@ -250,7 +263,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Title row (centered)
+              // Título da secção.
               Center(
                 child: Text(
                   'Os seus animais',
@@ -263,7 +276,7 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
               ),
               const SizedBox(height: 8),
 
-              // Content
+              // Conteúdo principal: estado vazio ou grelha de animais.
               Expanded(
                 child: items.isEmpty
                     ? EmptyState(
@@ -283,13 +296,15 @@ class _MyAnimalsScreenState extends State<MyAnimalsScreen> {
                           final a = items[i];
                           return Stack(
                             children: [
+                              // Cartão do animal que abre a página de detalhes ao tocar.
                               Positioned.fill(
                                 child: AnimalGridCard(
                                   animal: a,
-                                  showFav: false,                    // instituição não tem favoritos
+                                  showFav: false,                  
                                   onTap: () => context.push('/animal/${a.id}'),
                                 ),
                               ),
+                              // Botão de contexto (três pontos) para ações de editar/apagar.
                               Positioned(
                                 right: 12,
                                 top: 12,

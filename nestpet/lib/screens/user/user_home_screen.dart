@@ -1,3 +1,10 @@
+// Propósito geral: Ecrã principal para utilizadores, mostrando lista de animais disponíveis
+// com pesquisa, filtros e navegação para detalhes; inclui um atalho flutuante para mensagens.
+// Observações:
+// - Filtragem é feita localmente sobre os dados do repositório em memória.
+// - Usa Overlay para colocar o botão de chat alinhado com a barra inferior do shell.
+// - A lista renderiza cartões `AnimalGridCard` e usa o router para navegar para detalhes.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +16,7 @@ import '../widgets/animal_grid_card.dart';
 import 'animal_filters_sheet.dart';
 import '../widgets/empty_state.dart';
 
+// StatefulWidget para gerir estado de filtros, pesquisa e overlay do FAB.
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
 
@@ -17,6 +25,7 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
+  // Filtros
   String? tipo;
   String? tamanho;
   int? idadeMax;
@@ -25,15 +34,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? cor;
   double? pesoMin;
   double? pesoMax;
+  // Pesquisa
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
+  // Overlay do botão de chat
   OverlayEntry? _fabOverlay;
   double? _lastFabBottomInset;
 
+  // Abre folha de filtros e aplica resultados.
   Future<void> _openFilters() async {
-    // If a FAB overlay exists, remove it so the modal sheet can visually
-    // cover the bottom bar and message button. We re-insert the overlay
-    // after the sheet closes.
     final hadOverlay = _fabOverlay != null;
     if (hadOverlay) {
       _fabOverlay?.remove();
@@ -66,10 +75,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           cor = res['cor'] as String?;
           pesoMin = res['pesoMin'] as double?;
           pesoMax = res['pesoMax'] as double?;
-          // caracteristicas removed from filters
         });
       }
     } finally {
+      // Reinsere o overlay após fechar filtros para manter posição do FAB.
       if (hadOverlay && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
       }
@@ -78,30 +87,26 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Obtém repositório e lista base com filtros iniciais simples.
     final repo = context.watch<AppState>().animals;
     final baseItems = repo.list(tipo: tipo, tamanho: tamanho, idadeMaxMeses: idadeMax);
+    // Aplica filtros avançados e pesquisa.
     final items = baseItems.where((a) {
-      // apply query
       if (_query.isNotEmpty) {
         final q = _query.toLowerCase();
         final name = a.nome.toLowerCase();
         final desc = a.descricao.toLowerCase();
         if (!(name.contains(q) || desc.contains(q))) return false;
       }
-      // sexo
       if (sexo != null && sexo!.isNotEmpty && a.sexo != sexo) return false;
-      // vacinado
       if (vacinado != null && a.vacinado != vacinado) return false;
-      // cor (check if any selected color matches the animal's color)
       if (cor != null && cor!.isNotEmpty) {
         final selectedColors = cor!.split(',').map((s) => s.trim().toLowerCase()).where((s) => s.isNotEmpty).toList();
         final animalColor = a.cor.toLowerCase();
         if (!selectedColors.any((c) => animalColor.contains(c))) return false;
       }
-      // peso
       if (pesoMin != null && a.pesoKg < pesoMin!) return false;
       if (pesoMax != null && a.pesoKg > pesoMax!) return false;
-      // caracteristicas filter removed
       return true;
     }).toList();
 
@@ -112,16 +117,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Search bar (styled) with filter button at left and app symbol on right
+              // Barra de topo: filtro, pesquisa e avatar do utilizador.
               Row(
                 children: [
-                  // Filter button on the left
                   IconButton(
                     onPressed: _openFilters,
                     icon: Icon(Icons.tune, color: Theme.of(context).colorScheme.primary),
                     tooltip: 'Filtrar',
                   ),
-                  // Search input container
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -164,10 +167,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // App symbol on the right (outside the search box) — show user avatar if available
                   GestureDetector(
                     onTap: () {},
                     child: Builder(builder: (ctx) {
+                      // Mostra avatar do utilizador se houver URL nas metadatas; caso contrário, ícone pets.
                       final user = Supabase.instance.client.auth.currentUser;
                       final meta = user?.userMetadata;
                       dynamic raw = meta != null ? meta['avatar_url'] : null;
@@ -214,7 +217,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Title row (centered)
+              // Título da secção.
               Center(
                 child: Text(
                   'Animais disponíveis',
@@ -227,7 +230,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
               const SizedBox(height: 8),
 
-              // Content
+              // Lista de animais ou estado vazio com ação para limpar filtros.
               Expanded(
                 child: items.isEmpty
                     ? EmptyState(
@@ -265,15 +268,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Após primeiro frame, insere overlay do botão de chat.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _insertFabOverlay();
     });
   }
 
+  // Cria/insere OverlayEntry para o botão flutuante de chat, posicionado conforme insets.
   void _insertFabOverlay() {
     final overlay = Overlay.of(context);
     final bottomInsetRaw = MediaQuery.of(context).viewPadding.bottom;
-    // Use full safe-area inset with a small minimum to match earlier layout
     final bottomInset = math.max(bottomInsetRaw, 16.0);
     if (_fabOverlay != null && _lastFabBottomInset == bottomInset) return;
     _fabOverlay?.remove();
@@ -282,11 +286,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       final bottomInsetRaw = MediaQuery.of(context).viewPadding.bottom;
       final bottomInset = math.max(bottomInsetRaw, 16.0);
       final primary = Theme.of(context).colorScheme.primary;
-      // constants for layout were previously used; keep inline values removed
 
-      // compute pill bottom (distance from bottom) — matches pill Positioned(bottom: bottomInset + 8)
       final pillBottom = bottomInset + 8;
-      // place the FAB so it slightly overlaps the pill (closer attachment)
       final desiredFabBottom = pillBottom - 24.0;
 
       return Positioned(
@@ -317,11 +318,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Reposiciona overlay quando mudanças de dependências podem afetar layout.
     WidgetsBinding.instance.addPostFrameCallback((_) => _insertFabOverlay());
   }
 
   @override
   void dispose() {
+    // Limpa overlay e dispose do controlador de pesquisa.
     _fabOverlay?.remove();
     _searchController.dispose();
     super.dispose();

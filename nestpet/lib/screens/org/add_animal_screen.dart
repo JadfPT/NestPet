@@ -1,3 +1,13 @@
+/*
+Propósito: Ecrã para criar um novo animal da instituição.
+- Permite definir dados básicos, personalidade, cores e anexar media (imagens/vídeos).
+- Persiste o novo registo e navega para o ecrã principal da instituição.
+
+Observações:
+- Seleção de media via `FilePicker` e upload com `StorageRepository` (até 10 itens).
+- Mantém estado local para campos e seleções com controladores e sets.
+- Usa `AppState` para criação e `router` para navegação.
+*/
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -14,6 +24,7 @@ import '../../utils/color_tags.dart';
 import '../../utils/personality_tags.dart';
 
 
+// Ecrã de adicionar animal (formulário completo com media).
 class AddAnimalScreen extends StatefulWidget {
   const AddAnimalScreen({super.key});
   @override
@@ -21,7 +32,9 @@ class AddAnimalScreen extends StatefulWidget {
 }
 
 class _AddAnimalScreenState extends State<AddAnimalScreen> {
+  // Chave do formulário.
   final form = GlobalKey<FormState>();
+  // Campos principais com valores por omissão.
   String nome = '';
   String tipo = 'Cão';
   String sexo = 'M';
@@ -34,13 +47,19 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   bool vacinado = false;
   String caracteristicas = '';
   String cor = '';
+  // Estados UI para expandir listas.
   bool _showAllPersonalities = false;
   bool _showAllColors = false;
+  // Seleções correntes.
   final Set<String> _selectedColors = {};
   final Set<String> _selectedPersonalities = {};
+  // Itens de media associados ao animal.
   final List<MediaItem> media = [];
+  // Id gerado para diretório de upload.
   final String _animalId = const Uuid().v4();
+  // Repositório de armazenamento para uploads.
   final _storage = StorageRepository();
+  // Controladores de texto.
   late final TextEditingController _nomeController;
   late final TextEditingController _descricaoController;
   late final TextEditingController _caracteristicasController;
@@ -48,6 +67,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   @override
   void initState() {
     super.initState();
+    // Inicializa controladores com valores atuais.
     _nomeController = TextEditingController(text: nome);
     _descricaoController = TextEditingController(text: descricao);
     _caracteristicasController = TextEditingController(text: caracteristicas);
@@ -55,14 +75,15 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
 
   @override
   void dispose() {
+    // Liberta controladores.
     _nomeController.dispose();
     _descricaoController.dispose();
     _caracteristicasController.dispose();
     super.dispose();
   }
 
+  // Seleciona ficheiros e faz upload até 10 itens, atualizando caminhos para URLs.
   Future<void> _pickMedia() async {
-    // Require authenticated user for uploads
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       if (context.mounted) {
@@ -82,18 +103,14 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
       final ext = path.split('.').last.toLowerCase();
       final type = ['mp4','mov','avi'].contains(ext) ? 'video' : 'image';
       final stored = await AnimalRepository.persistPickedFile(path);
-      // adiciona localmente para preview imediato
       media.add(MediaItem(path: stored, type: type));
-      // tenta fazer upload para Supabase (coloca em animals/<animalId>/<filename>)
       final filename = stored.split(Platform.pathSeparator).last;
       final dest = 'animals/$_animalId/$filename';
       try {
         final url = await _storage.uploadAnimalImage(File(stored), dest);
-        // substitui o caminho local pelo URL público para uso posterior
         final idx = media.indexWhere((m) => m.path == stored);
         if (idx != -1) media[idx].path = url;
       } catch (e, st) {
-        // falhou upload, mantém local path e mostra aviso mais informativo
         // ignore: avoid_print
         print('upload failed: $e');
         // ignore: avoid_print
@@ -106,18 +123,18 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     if (mounted) setState(() {});
   }
 
+  // Remove um item de media pelo índice.
   void _removeMedia(int i) {
     media.removeAt(i);
     setState(() {});
   }
 
+  // Constrói o objeto `Animal` e pede ao AppState para persistir; valida que existe media.
   Future<void> _save() async {
-    // read from controllers to build the model
     nome = _nomeController.text.trim();
     descricao = _descricaoController.text.trim();
     personalidade = _selectedPersonalities.join(',');
     caracteristicas = _caracteristicasController.text.trim();
-    // persist selected tags as comma-separated string
     cor = _selectedColors.join(',');
     if (media.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Adicione pelo menos uma foto/vídeo.')));
@@ -131,16 +148,15 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
       personalidade: personalidade, expectativaVidaAnos: expectativaVidaAnos, vacinado: vacinado,
       caracteristicas: caracteristicas, cor: cor, media: media,
     );
-    await app.addAnimal(a);               // <-- notifica a UI
+    await app.addAnimal(a);
     if (!context.mounted) return;
-    // use global router to avoid using BuildContext across async gaps
-    // import at top: see app_router.dart
-    router.go('/o/home');                // <-- volta para home (evita “ecrã preto”)
+    router.go('/o/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Título com estilo de destaque.
       appBar: AppBar( title: Text('Adicionar animal', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary)),),
       body: SafeArea(
         child: Form(
@@ -148,6 +164,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // Linha com nome e tipo.
               Row(
                 children: [
                   Expanded(child: TextFormField(controller: _nomeController, decoration: const InputDecoration(labelText: 'Nome'))),
@@ -159,6 +176,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   ], onChanged: (v)=> setState(()=> tipo=v!), decoration: const InputDecoration(labelText: 'Tipo'))),
                 ],
               ),
+              // Linha com sexo e tamanho.
               Row(
                 children: [
                   Expanded(child: DropdownButtonFormField(initialValue: sexo, items: const [
@@ -174,12 +192,15 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                 ],
               ),
               const SizedBox(height: 8),
+              // Sliders de idade e peso.
               Text('Idade (meses): $idade'),
               Slider(value: idade.toDouble(), min: 1, max: 120, divisions: 119, onChanged: (v)=> setState(()=> idade=v.round())),
               Text('Peso (kg): ${peso.toStringAsFixed(1)}'),
               Slider(value: peso, min: 0.5, max: 100, divisions: 199, onChanged: (v)=> setState(()=> peso=double.parse(v.toStringAsFixed(1)))),
+              // Descrição.
               TextFormField(controller: _descricaoController, decoration: const InputDecoration(labelText: 'Descrição'), maxLines: 3),
               const SizedBox(height: 12),
+              // Seleção de personalidade.
               Text('Personalidade', style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Wrap(
@@ -226,6 +247,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   );
                 }).toList(),
               ),
+              // Mostrar/ocultar todas as personalidades.
               if (personalityOptions.length > 3)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -242,6 +264,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   ),
                 ),
               const SizedBox(height: 8),
+              // Expectativa de vida e estado de vacinação.
               Row(
                 children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -255,8 +278,10 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   ]),
                 ],
               ),
+              // Características.
               TextFormField(controller: _caracteristicasController, decoration: const InputDecoration(labelText: 'Características'), maxLines: 2),
               const SizedBox(height: 8),
+              // Seleção de cores.
               Text('Cores', style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               Wrap(
@@ -303,6 +328,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                   );
                 }).toList(),
               ),
+              // Mostrar/ocultar todas as cores.
               if (kCommonColorTags.length > 6)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -320,6 +346,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                 ),
               const SizedBox(height: 12),
 
+              // Ações de media: adicionar, limpar.
               Row(
                 children: [
                   FilledButton.icon(onPressed: media.length>=10?null:_pickMedia, icon: const Icon(Icons.add_photo_alternate), label: Text('Adicionar media (${media.length}/10)')),
@@ -328,6 +355,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                 ],
               ),
               const SizedBox(height: 8),
+              // Grelha de media com remoção por item.
               if (media.isNotEmpty)
                 GridView.builder(
                   shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
@@ -358,6 +386,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                 ),
 
               const SizedBox(height: 16),
+              // Botão para criar o animal.
               FilledButton(onPressed: _save, child: const Text('Criar')),
             ],
           ),

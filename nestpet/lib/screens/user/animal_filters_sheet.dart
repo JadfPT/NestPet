@@ -1,6 +1,15 @@
+// Propósito geral: Folha modal de filtros para a lista de animais, permitindo
+// selecionar tipo, tamanho, idade máxima, sexo, estado de vacinação, cores e
+// intervalo de peso.
+// Observações:
+// - Recebe valores iniciais para pré-preencher o formulário.
+// - Ao aplicar/limpar, devolve um mapa com os filtros via Navigator.pop.
+// - Mantém estado interno (seleções) e apresenta chips de cor opcionais.
+
 import 'package:flutter/material.dart';
 import '../../utils/color_tags.dart';
 
+// Folha de filtros com parâmetros iniciais opcionais.
 class AnimalFiltersSheet extends StatefulWidget {
   final String? initialTipo;
   final String? initialTamanho;
@@ -29,27 +38,30 @@ class AnimalFiltersSheet extends StatefulWidget {
 }
 
 class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
+  // Campos de filtro atuais.
   String? tipo;
   String? tamanho;
   double idade = 60;
   String? sexo;
   bool? vacinado;
-  // selected color tags for filters (stored as CSV when applying)
+  // Seleção de cores (conjunto para fácil toggle) e controlo de visibilidade dos chips.
   final Set<String> _selectedColors = {};
   bool _showColorChips = false;
   
+  // Intervalo de peso em kg.
   RangeValues peso = const RangeValues(0, 100);
 
   @override
   void initState() {
     super.initState();
+    // Carrega valores iniciais para o estado local.
     tipo = widget.initialTipo;
     tamanho = widget.initialTamanho;
     idade = (widget.initialIdadeMax ?? 60).toDouble();
     sexo = widget.initialSexo;
     vacinado = widget.initialVacinado;
-    // parse initialCor CSV into selected set
     final initialCor = widget.initialCor ?? '';
+    // Divide lista de cores (separadas por vírgulas) e adiciona ao conjunto.
     _selectedColors.addAll(initialCor.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
     
     final min = widget.initialPesoMin ?? 0.0;
@@ -59,6 +71,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Resumo textual das cores selecionadas (mostra até 3).
     final String selectedSummary = _selectedColors.isEmpty
         ? 'Nenhuma selecionada'
         : (_selectedColors.length > 3
@@ -73,6 +86,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
         child: SizedBox(
+          // Altura proporcional ao ecrã.
           height: MediaQuery.of(context).size.height * 0.72,
           child: Container(
             decoration: BoxDecoration(
@@ -83,7 +97,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
             ),
             child: Column(
               children: [
-                // drag handle
+                // Indicador de arrastar no topo.
                 Padding(
                   padding: const EdgeInsets.only(top: 10, bottom: 6),
                   child: Center(
@@ -96,6 +110,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Cabeçalho com título e ação para limpar filtros.
                         Row(
                           children: [
                             const Expanded(child: Text('Filtros', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
@@ -103,7 +118,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                               icon: const Icon(Icons.delete_outline),
                               tooltip: 'Limpar filtros',
                               onPressed: () {
-                                // Clear local state and immediately return empty filters
+                                // Repõe valores por defeito e fecha devolvendo nulls.
                                 tipo = null;
                                 tamanho = null;
                                 idade = 60;
@@ -127,6 +142,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ],
                         ),
                         const SizedBox(height: 8),
+                        // Tipo: Cão/Gato/Outro.
                         DropdownButtonFormField<String>(
                           initialValue: tipo,
                           decoration: const InputDecoration(labelText: 'Tipo'),
@@ -137,6 +153,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ],
                           onChanged: (v) => setState(() => tipo = v),
                         ),
+                        // Tamanho: pequeno/médio/grande.
                         DropdownButtonFormField<String>(
                           initialValue: tamanho,
                           decoration: const InputDecoration(labelText: 'Tamanho'),
@@ -147,6 +164,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ],
                           onChanged: (v) => setState(() => tamanho = v),
                         ),
+                        // Sexo: indiferente/macho/fêmea.
                         DropdownButtonFormField<String>(
                           initialValue: sexo ?? '',
                           decoration: const InputDecoration(labelText: 'Sexo'),
@@ -157,11 +175,13 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ],
                           onChanged: (v) => setState(() => sexo = (v == '' ? null : v)),
                         ),
+                        // Vacinado: tri-state (true/null=>indiferente via toggle simples).
                         SwitchListTile(
                           title: const Text('Vacinado'),
                           value: vacinado ?? false,
                           onChanged: (v) => setState(() => vacinado = v ? true : null),
                         ),
+                        // Secção de cor: chips expansíveis.
                         Row(
                           children: [
                             const Expanded(child: Text('Cor')),
@@ -191,8 +211,10 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                             }).toList(),
                           )
                         else
+                          // Quando recolhido, mostra sumário breve.
                           Padding(padding: const EdgeInsets.symmetric(vertical: 6.0), child: Text(selectedSummary)),
                         const SizedBox(height: 8),
+                        // Idade máxima em meses (2..120) com slider.
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6.0),
                           child: Row(children: [
@@ -207,6 +229,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ]),
                         ),
                         const SizedBox(height: 8),
+                        // Intervalo de peso (0..100 kg) com RangeSlider.
                         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           const Text('Peso (kg)'),
                           SliderTheme(
@@ -215,15 +238,14 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
                           ),
                         ]),
                         const SizedBox(height: 8),
-                        // Características field removed per design decision.
                         const SizedBox(height: 12),
+                        // Botão aplicar: devolve mapa de filtros, omitindo valores por defeito.
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton(
                             onPressed: () => Navigator.of(context).pop({
                               'tipo': tipo,
                               'tamanho': tamanho,
-                              // se o utilizador não mexeu, devolve null para não filtrar
                               'idade': (idade == 60) ? null : idade.round(),
                               'sexo': sexo,
                               'vacinado': vacinado,
@@ -249,7 +271,7 @@ class _AnimalFiltersSheetState extends State<AnimalFiltersSheet> {
 
   @override
   void dispose() {
-    // caracteristicasController.dispose(); // Removed as the controller is no longer needed
+    // Sem controladores adicionais a libertar.
     super.dispose();
   }
 }

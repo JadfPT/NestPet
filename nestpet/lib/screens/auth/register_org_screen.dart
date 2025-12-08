@@ -1,3 +1,13 @@
+/*
+Propósito: Ecrã de registo para criar uma conta de instituição (organização).
+- Recolhe nome, email, password e NIF com validação específica.
+- Inicia fluxo de registo, marca papel como org e cria registos auxiliares.
+
+Observações:
+- Usa `AuthService`/Supabase para registar e guardar dados em `organizations`/`pending_registrations`.
+- Guarda papel e info temporária via `SessionService` durante o processo.
+- Controla estado de carregamento e visibilidade de passwords.
+*/
 // ignore_for_file: use_build_context_synchronously, deprecated_member_use
 import 'package:flutter/material.dart';
 import '../../app_router.dart';
@@ -7,6 +17,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 
+// Ecrã de registo de instituição.
 class RegisterOrgScreenFixed extends StatefulWidget {
   const RegisterOrgScreenFixed({super.key});
 
@@ -15,17 +26,21 @@ class RegisterOrgScreenFixed extends StatefulWidget {
 }
 
 class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
+  // Form e controladores de campos.
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _nifCtrl = TextEditingController();
+  // Serviço de autenticação e estado de carregamento.
   final _auth = AuthService();
   bool _loading = false;
+  // Visibilidade das passwords.
   bool _obscurePass = true;
   bool _obscureConfirm = true;
 
+  // Submete: valida NIF, regista conta, define papel org e cria registos auxiliares.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -34,52 +49,43 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
     final nif = _nifCtrl.text.trim();
     String? message;
     try {
-      // Basic checks first: length and starting digit (no checksum required)
+      // Validações simples do NIF: 9 dígitos e começar por 5 ou 6.
       if (!RegExp(r'^\d{9}$').hasMatch(nif)) throw Exception('NIF deve ter 9 dígitos');
       if (!RegExp(r'^[56]').hasMatch(nif)) throw Exception('NIF deve começar por 5 ou 6');
       final res = await _auth.signUpEmail(email, pass);
-      // Persist desired role locally so after email confirmation + login
-      // the AppState can fall back to this saved role if server metadata
-      // is not present.
+
+      // Guarda papel e info da org na sessão (temporário).
       await SessionService.saveRole('org');
-      // Also save the organization info (name + nif) so we can create the
-      // row in the `organizations` table on first real login (when session
-      // exists and server-side writes are possible).
+
       await SessionService.saveOrgInfo(_nameCtrl.text.trim(), nif);
 
-      // If signUp produced a session/currentUser (some Supabase setups do),
-      // attempt to persist the role immediately server-side so other
-      // devices will see it.
+
       try {
         final user = res.user ?? Supabase.instance.client.auth.currentUser;
         if (user != null) {
-          // Update auth user metadata
           try {
+            // Atualiza metadados com papel e NIF.
             await Supabase.instance.client.auth.updateUser(UserAttributes(data: {'role': 'org', 'nif': nif}));
           } catch (_) {}
 
-          // Insert into organizations table linking user_id (if schema allows)
           try {
+            // Cria registo na tabela organizations.
             final insertData = {
               'name': _nameCtrl.text.trim(),
               'nif': nif,
               'user_id': user.id,
             };
             await Supabase.instance.client.from('organizations').insert(insertData);
-            // If successful, clear local org info
             await SessionService.clearOrgInfo();
           } catch (_) {}
-          // If a profile row was created automatically by the DB trigger,
-          // remove it so the account remains pending until email confirmation.
           try {
+            // Limpa perfis anteriores para evitar conflito.
             await Supabase.instance.client.from('profiles').delete().eq('id', user.id);
           } catch (_) {}
         }
-        // Also insert a pending registration record so the DB can later
-        // associate the org to the auth user when the email is confirmed.
-        // This allows server-side triggers to create the organization and
-        // set user metadata even if signUp did not produce a session.
+
         try {
+          // Marca registo pendente auxiliar.
           await Supabase.instance.client.from('pending_registrations').insert({
             'email': email,
             'name': _nameCtrl.text.trim(),
@@ -88,8 +94,8 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
           });
         } catch (_) {}
       } catch (_) {}
-      // After registering, always redirect the user to the login screen so
-      // they can confirm the email and sign in.
+
+      // Navega e informa para confirmação por email.
       router.go('/');
       message = 'Registo efetuado. Verifique o seu email para confirmar a conta.';
     } catch (e) {
@@ -104,6 +110,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
 
   @override
   Widget build(BuildContext context) {
+    // Cores do tema.
     final colors = Theme.of(context).colorScheme;
     final primary = colors.primary;
 
@@ -112,6 +119,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        // Botão voltar.
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: primary),
           onPressed: () => router.go('/welcome'),
@@ -134,6 +142,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // Logo e título.
                       SizedBox(
                         width: 140,
                         height: 140,
@@ -146,10 +155,12 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                       Text('Criar Conta (Instituição)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: primary)),
                       const SizedBox(height: 16),
 
+                      // Formulário de registo da instituição.
                       Form(
                         key: _formKey,
                         child: Column(
                           children: [
+                            // Nome da instituição.
                             TextFormField(
                               controller: _nameCtrl,
                               decoration: InputDecoration(
@@ -162,6 +173,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                               validator: (v) => (v == null || v.isEmpty) ? 'Nome requerido' : null,
                             ),
                             const SizedBox(height: 12),
+                            // Email.
                             TextFormField(
                               controller: _emailCtrl,
                               decoration: InputDecoration(
@@ -174,6 +186,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                               validator: (v) => (v == null || v.isEmpty) ? 'Email requerido' : null,
                             ),
                             const SizedBox(height: 12),
+                            // Palavra-passe com alternância de visibilidade.
                             TextFormField(
                               controller: _passCtrl,
                               decoration: InputDecoration(
@@ -191,6 +204,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                               validator: (v) => (v == null || v.length < 6) ? 'Password min 6' : null,
                             ),
                             const SizedBox(height: 12),
+                            // Confirmar palavra-passe.
                             TextFormField(
                               controller: _confirmCtrl,
                               decoration: InputDecoration(
@@ -208,6 +222,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                               validator: (v) => (v == null || v != _passCtrl.text) ? 'As passwords não coincidem' : null,
                             ),
                             const SizedBox(height: 12),
+                            // NIF com validação específica.
                             TextFormField(
                               controller: _nifCtrl,
                               decoration: InputDecoration(
@@ -229,6 +244,7 @@ class _RegisterOrgScreenFixedState extends State<RegisterOrgScreenFixed> {
                             ),
                             const SizedBox(height: 18),
 
+                            // Botão de criar como instituição.
                             SizedBox(
                               width: 280,
                               child: FilledButton(

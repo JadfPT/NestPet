@@ -1,17 +1,29 @@
+/*
+Propósito: Repositório de chat usando Supabase para mensagens e estados de escrita.
+- Fornece leitura, envio de mensagens, marcação de lidas e eventos "a escrever".
+- Implementa subscrições por polling para novos conteúdos.
+
+Observações:
+- Estruturas de dados simples (Map) e modelo `Message` para a UI.
+- Tabelas usadas: `messages` e `typing_status`.
+- Alguns métodos de subscrição estão vazios/placeholder (compatibilidade futura).
+*/
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message.dart';
 
 class SupabaseChatRepository {
+  // Cliente Supabase.
   final _client = Supabase.instance.client;
-  // realtime channels map removed — using DB-backed typing_status + postgres_changes subscriptions
 
+  // Busca mensagens por animal (e opcionalmente por utilizador), ordenadas por criação.
   Future<List<Map<String, dynamic>>> fetchMessages(String animalId, {String? userId}) async {
     final query = _client.from('messages').select().eq('animal_id', animalId);
     final res = userId == null ? await query.order('created_at') : await query.eq('user_id', userId).order('created_at');
     return (res as List).cast<Map<String, dynamic>>();
   }
 
+  // Envia/insere uma mensagem e tenta registar saída para debug.
   Future<void> sendMessage(String animalId, String userId, String fromRole, String content) async {
     try {
       final res = await _client.from('messages').insert({
@@ -20,7 +32,6 @@ class SupabaseChatRepository {
         'from_role': fromRole,
         'content': content,
       }).select().maybeSingle();
-      // quick debug log to help diagnose mismatches during testing
       try {
         // ignore: avoid_print
         print('[chat] inserted message -> ${res ?? '<null>'}');
@@ -33,7 +44,7 @@ class SupabaseChatRepository {
     }
   }
 
-  /// Upsert typing flag into `typing_status` table (requires migration).
+  // Upsert de estado "a escrever" para um par (animal, utilizador humano).
   Future<void> sendTypingEventUpsert(String animalId, String humanUserId, bool isTyping) async {
     try {
       await _client.from('typing_status').upsert({
@@ -45,10 +56,9 @@ class SupabaseChatRepository {
     } catch (_) {}
   }
 
-  /// Subscribe to typing_status changes for this conversation using postgres_changes.
+  // Subscrição por polling do estado "a escrever".
   Stream<Map<String, dynamic>> subscribeTypingEvents(String animalId, String humanUserId) {
     final controller = StreamController<Map<String, dynamic>>.broadcast();
-    // Polling fallback for typing_status (simple and compatible):
     Timer? timer;
     Future<void> poll() async {
       try {
@@ -59,7 +69,6 @@ class SupabaseChatRepository {
       } catch (_) {}
     }
 
-    // initial poll and periodic checks
     poll();
     timer = Timer.periodic(const Duration(seconds: 1), (_) => poll());
 
@@ -72,7 +81,7 @@ class SupabaseChatRepository {
     return controller.stream;
   }
 
-  /// Mark all messages in this conversation as read (sets read_at)
+  // Marca todas as mensagens da conversa como lidas (se ainda não lidas).
   Future<void> markConversationRead(String animalId, String humanUserId) async {
     try {
         await _client
@@ -84,44 +93,25 @@ class SupabaseChatRepository {
     } catch (_) {}
   }
 
-  /// Send a lightweight typing event via a broadcast channel.
+  // Alias: envia evento typing via upsert.
   Future<void> sendTypingEvent(String animalId, String humanUserId, bool isTyping) async {
-    // Deprecated: use sendTypingEventUpsert(...) which writes into `typing_status`.
     return sendTypingEventUpsert(animalId, humanUserId, isTyping);
   }
 
-  /// Subscribe to typing events for this conversation. Emits maps with keys: 'is_typing' and 'user_id'.
+  // Placeholder de subscrição typing.
   Stream<Map<String, dynamic>> subscribeTyping(String animalId, String humanUserId) {
-    // Deprecated: use subscribeTypingEvents(...) which listens to postgres_changes on typing_status.
     return Stream<Map<String, dynamic>>.empty();
   }
 
-  // --- Compat layer para a API antiga usada no app
-
-  /// Compat: retorna lista de Message (sincronamente obtida com fetchMessages)
-  /// Compat: retorna lista de Message (sincronamente obtida com fetchMessages)
-  /// Atualmente devolve uma lista vazia para compatibilidade; recomenda-se atualizar as screens
-  /// para usar `fetchMessages` ou `subscribeNewMessages` para dados em tempo real.
+  // Placeholder: mensagens por animal.
   List<Message> forAnimal(String animalId) {
     return [];
   }
-
-  /// Compat: envia mensagem usando a API similar à antiga `send(animalId, from, text)`
-  /// Compatibility helper used by existing screens.
-  ///
-  /// `senderId` should be the id of the currently authenticated user (the sender).
-  /// For user -> senderId is the human user's id and `fromRole` will be 'user'.
-  /// For org -> senderId is the org owner's id and `fromRole` will be 'org'.
-  /// The repository needs to know the human participant's id to store in `user_id`.
-  /// When called from a user screen, `senderId` is the human user and we set `userId = senderId`.
-  /// When called from an org screen, the caller MUST pass the human participant id in `senderId` parameter
-  /// (this is the existing convention in the app: org screens should call with the human user's id).
+  
+  // Envia mensagem construindo `fromRole` e `user_id` conforme origem.
   Future<void> send(String animalId, String senderId, String text, {String? humanUserId, String? fromRole}) async {
-    // `senderId` is the id of the authenticated sender (user or org owner).
-    // `humanUserId` should be the human participant's id for this conversation. If omitted,
-    // we assume the sender is the human and store `senderId` in `user_id`.
+
     final userIdToStore = humanUserId ?? senderId;
-    // If caller didn't explicitly pass fromRole, infer: if senderId equals stored user id -> it's the human ('user'), else it's an org ('org').
     final finalFromRole = fromRole ?? (userIdToStore == senderId ? 'user' : 'org');
     try {
       // ignore: avoid_print
@@ -130,20 +120,22 @@ class SupabaseChatRepository {
     await sendMessage(animalId, userIdToStore, finalFromRole, text);
   }
 
-  /// Retorna um Stream que emite cada nova mensagem (map) para `animalId`.
+  // Subscrição por polling a novas mensagens; evita duplicados com `seen`.
   Stream<Map<String, dynamic>> subscribeNewMessages(String animalId, {String? userId, DateTime? lastSeen}) {
-    // Try to use Supabase Realtime subscription (postgres_changes).
-    // If realtime isn't available or subscription fails, fall back to polling.
+
+    // Cria um controlador broadcast para permitir múltiplos ouvintes.
     final controller = StreamController<Map<String, dynamic>>.broadcast();
 
-    // Helper: polling fallback (kept from previous implementation)
+    // Lista de ids já vistos para prevenir duplicados no stream.
     List<String> seen = [];
     Timer? timer;
+    // Função para inicializar o ciclo de polling.
     Future<void> startPolling() async {
+      // Função interna que executa uma consulta e emite novas mensagens.
       Future<void> poll() async {
         try {
-          // If lastSeen is provided, fetch only messages newer than lastSeen
           List<Map<String, dynamic>> rows;
+          // Se existe um "último visto", limita às mensagens com `created_at` posterior.
           if (lastSeen != null) {
             final iso = lastSeen.toUtc().toIso8601String();
             final res = userId == null
@@ -151,11 +143,13 @@ class SupabaseChatRepository {
                 : await _client.from('messages').select().eq('animal_id', animalId).eq('user_id', userId).gt('created_at', iso).order('created_at');
             rows = (res as List).cast<Map<String, dynamic>>();
           } else {
+            // Caso contrário, obtém todas as mensagens ordenadas por criação, com ou sem filtro de utilizador.
             final res = userId == null
                 ? await _client.from('messages').select().eq('animal_id', animalId).order('created_at')
                 : await _client.from('messages').select().eq('animal_id', animalId).eq('user_id', userId).order('created_at');
             rows = (res as List).cast<Map<String, dynamic>>();
           }
+          // Percorre resultados e emite apenas os não vistos.
           for (final r in rows) {
             final id = (r['id'] ?? '').toString();
             if (id.isEmpty) continue;
@@ -167,20 +161,22 @@ class SupabaseChatRepository {
         } catch (_) {}
       }
 
-      // initial poll
+      // Executa uma primeira consulta imediata e agenda polling de 2 em 2 segundos.
       await poll();
       timer = Timer.periodic(const Duration(seconds: 2), (_) => poll());
     }
 
-    // Use polling fallback as primary subscription mechanism (robust across SDK versions).
+    // Inicia o processo de polling.
     startPolling();
 
     controller.onCancel = () {
       try {
+        // Ao cancelar a subscrição, evita fugas de memória cancelando o timer.
         timer?.cancel();
       } catch (_) {}
     };
 
+    // Expõe o stream para que a UI possa escutar novas mensagens.
     return controller.stream;
   }
 }

@@ -1,27 +1,39 @@
+/*
+Propósito: Repositório de animais usando Supabase com cache local.
+- Carrega, lista, adiciona, atualiza e remove animais.
+- Adapta consultas conforme o papel (org vê os seus; user vê publicados).
+
+Observações:
+- Mantém um cache `_cache` para reduzir acessos e atualizar UI rapidamente.
+- Converte campos entre diferentes nomes/tipos ao mapear resultados (`_mapToAnimal`).
+- `image_path` guarda lista (JSON) de caminhos/URLs das media.
+*/
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/animal.dart';
 
 class SupabaseAnimalRepository {
+  // Cliente Supabase e cache local.
   final _client = Supabase.instance.client;
   final List<Animal> _cache = [];
 
+  // Inicializa carregando dados.
   Future<void> init() async {
     await refresh();
   }
 
-  /// Refresh cache from Supabase and return list
+  // Recarrega lista de animais conforme papel do utilizador.
   Future<List<Animal>> refresh() async {
-    // Fetch user and prefer server-side metadata to decide which animals to load.
     String? userId;
     String? serverRole;
     try {
+      // Tenta obter utilizador via SDK (getUser) e extrair metadados.
       final resp = await _client.auth.getUser();
       userId = resp.user?.id;
       final meta = resp.user?.userMetadata;
       if (meta != null && meta['role'] != null) serverRole = meta['role'] as String?;
     } catch (_) {
-      // fallback to currentUser if getUser fails
+      // Fallback para `currentUser` se getUser falhar.
       userId = _client.auth.currentUser?.id;
       try {
         final meta = _client.auth.currentUser?.userMetadata;
@@ -30,30 +42,30 @@ class SupabaseAnimalRepository {
     }
 
     late final dynamic res;
+    // Se é organização, lista apenas animais dessa org; caso contrário, só publicados.
     if (serverRole == 'org' && userId != null) {
-      // Organization: only load animals that belong to this org
       res = await _client.from('animals').select().eq('org_id', userId).order('created_at', ascending: false);
     } else {
-      // Regular users: only load published animals
       res = await _client.from('animals').select().eq('is_published', true).order('created_at', ascending: false);
     }
     // ignore: unnecessary_cast
     final list = (res as List).map((r) => _mapToAnimal(r as Map<String, dynamic>)).toList();
+    // Atualiza cache com os resultados mais recentes.
     _cache
       ..clear()
       ..addAll(list);
     return _cache;
   }
 
-  /// Synchronous view of cached animals
+  // Devolve cópia imutável do cache.
   List<Animal> all() => List.unmodifiable(_cache);
 
-  /// Clear the cache (useful for logout)
+  // Limpa o cache local.
   void clear() {
     _cache.clear();
   }
 
-  /// Filtered synchronous list (same signature as previous local repository)
+  // Filtra animais por tipo/tamanho/idade máxima.
   List<Animal> list({String? tipo, String? tamanho, int? idadeMaxMeses}) {
     return _cache.where((a) {
       final okTipo = tipo == null || a.tipo == tipo;
@@ -63,6 +75,7 @@ class SupabaseAnimalRepository {
     }).toList();
   }
 
+  // Obtém por id; consulta remota se não estiver em cache e atualiza cache.
   Future<Animal?> byId(String id) async {
     final cached = byIdSync(id);
     if (cached != null) return cached;
@@ -74,7 +87,7 @@ class SupabaseAnimalRepository {
     return a;
   }
 
-  /// Synchronous lookup in cache (may be null)
+  // Procura sincronamente no cache.
   Animal? byIdSync(String id) {
     try {
       return _cache.firstWhere((a) => a.id == id);
@@ -83,9 +96,10 @@ class SupabaseAnimalRepository {
     }
   }
 
+  // Adiciona um animal: constrói mapa de dados, insere e pré-insere no cache no topo.
   Future<Animal> add(Animal a) async {
     final userId = _client.auth.currentUser?.id;
-    // Normalize type for DB (avoid non-ascii enum values)
+    // Normaliza o tipo para evitar caracteres especiais na BD.
     final dbType = a.tipo.replaceAll('ã', 'a').replaceAll('Ã', 'A');
     final data = {
       'id': a.id,
@@ -102,21 +116,22 @@ class SupabaseAnimalRepository {
       'characteristics': a.caracteristicas,
       'color': a.cor,
       'description': a.descricao,
+      // Guarda apenas caminhos das media como JSON.
       'image_path': jsonEncode(a.media.map((m) => m.path).toList()),
       'is_published': true,
     };
-    // debug: log payload and request result
     // ignore: avoid_print
     print('SupabaseAnimalRepository.add: inserting data: $data');
     final inserted = await _client.from('animals').insert(data).select().maybeSingle();
     // ignore: avoid_print
     print('SupabaseAnimalRepository.add: insert result: $inserted');
+    // Atualiza cache local (inserção no topo para refletir ordem recente).
     _cache.insert(0, a);
     return a;
   }
 
+  // Atualiza um animal existente e sincroniza cache.
   Future<void> updateAnimal(Animal a) async {
-    // Normalize type for DB
     final dbType = a.tipo.replaceAll('ã', 'a').replaceAll('Ã', 'A');
     final data = {
       'name': a.nome,
@@ -134,32 +149,35 @@ class SupabaseAnimalRepository {
       'image_path': jsonEncode(a.media.map((m) => m.path).toList()),
       'is_published': true,
     };
-    // debug: log payload and update result
     // ignore: avoid_print
     print('SupabaseAnimalRepository.updateAnimal: updating id=${a.id} data=${data.toString()}');
     final updated = await _client.from('animals').update(data).eq('id', a.id).select().maybeSingle();
     // ignore: avoid_print
     print('SupabaseAnimalRepository.updateAnimal: update result: $updated');
+    // Substitui no cache o objeto atualizado.
     final idx = _cache.indexWhere((x) => x.id == a.id);
     if (idx != -1) _cache[idx] = a;
   }
 
+  // Remove um animal na BD e do cache.
   Future<void> delete(String id) async {
     await _client.from('animals').delete().eq('id', id);
     _cache.removeWhere((a) => a.id == id);
   }
 
+  // Converte um registo da BD para `Animal`, incluindo media vinda de JSON.
   Animal _mapToAnimal(Map<String, dynamic> r) {
     final mediaJson = r['image_path'];
     List<MediaItem> media = [];
     try {
       if (mediaJson != null) {
+        // `image_path` é uma lista JSON de caminhos/URLs.
         final list = jsonDecode(mediaJson.toString()) as List<dynamic>;
         media = list.map((p) => MediaItem(path: p.toString(), type: p.toString().endsWith('.mp4') ? 'video' : 'image')).toList();
       }
     } catch (_) {}
 
-    // Map DB type back to display value (e.g. 'Cao' -> 'Cão')
+    // Normaliza tipo para valores esperados na app.
     var tipoFromDb = (r['type'] ?? r['tipo'] ?? 'Cao').toString();
     if (tipoFromDb.toLowerCase() == 'cao') tipoFromDb = 'Cão';
     if (tipoFromDb.toLowerCase() == 'outro') tipoFromDb = 'Outro';
@@ -169,6 +187,7 @@ class SupabaseAnimalRepository {
       nome: r['name'] ?? '',
       tipo: tipoFromDb,
       sexo: r['sex'] ?? r['sexo'] ?? 'M',
+      // Parsing robusto para inteiros/doubles com fallbacks.
       idadeMeses: (r['age_months'] ?? r['idadeMeses'] ?? 0) is int
           ? (r['age_months'] ?? r['idadeMeses'] ?? 0) as int
           : int.tryParse((r['age_months'] ?? r['idadeMeses'] ?? '0').toString()) ?? 0,

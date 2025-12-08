@@ -1,10 +1,18 @@
+// Propósito geral: Fornece um fluxo de UI para alterar a password do utilizador
+// com validação local e operações de autenticação Supabase.
+// Observações:
+// - Valida a password atual efetuando um sign-in antes de atualizar.
+// - Usa SnackBar para feedback ao utilizador e protege chamadas com context.mounted.
+// - O diálogo devolve as passwords via Navigator e é obrigatório preencher corretamente.
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Reusable change-password flow.
-/// Call `ChangePasswordFlow.show(context)` to present options to the user.
+// Classe utilitária com método estático para apresentar o diálogo e executar a alteração.
 class ChangePasswordFlow {
+  // Abre o diálogo, valida a password atual, atualiza para a nova e dá feedback visual.
   static Future<void> show(BuildContext context) async {
+    // Mostra o diálogo e aguarda o resultado (mapa com 'current' e 'new').
     final result = await showDialog<Map<String, String>>(
       context: context,
       barrierDismissible: false,
@@ -14,12 +22,14 @@ class ChangePasswordFlow {
 
     if (result == null) return;
 
+    // Extrai passwords fornecidas pelo utilizador.
     final currentPassword = result['current']!;
     final newPassword = result['new']!;
 
-    // Wait for dialog to fully close and widget tree to settle
+    // Pequeno atraso para UX (permitir ver mensagens sequenciais suavemente).
     await Future.delayed(const Duration(milliseconds: 800));
 
+    // Obtém email do utilizador autenticado; necessário para validar a password atual.
     final supa = Supabase.instance.client.auth.currentUser;
     final email = supa?.email;
     if (email == null) {
@@ -32,6 +42,7 @@ class ChangePasswordFlow {
     }
 
     try {
+      // Notifica que vai validar a password atual.
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -41,13 +52,14 @@ class ChangePasswordFlow {
         );
       }
 
-      // Validate current password by attempting to reauthenticate
       try {
+        // Tenta iniciar sessão com email + password atual para validar.
         await Supabase.instance.client.auth.signInWithPassword(
           email: email,
           password: currentPassword,
         );
       } catch (e) {
+        // Password atual inválida: informa e aborta.
         if (context.mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -60,7 +72,7 @@ class ChangePasswordFlow {
         return;
       }
 
-      // Password is valid, now update it
+      // Password atual validada: avisa que vai atualizar.
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,12 +83,14 @@ class ChangePasswordFlow {
         );
       }
 
+      // Atualiza a password do utilizador.
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: newPassword),
       );
 
       await Future.delayed(const Duration(milliseconds: 500));
 
+      // Sucesso: informa utilizador.
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,6 +101,7 @@ class ChangePasswordFlow {
         );
       }
     } catch (e) {
+      // Erro inesperado no processo: mostra mensagem com detalhe.
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +115,7 @@ class ChangePasswordFlow {
   }
 }
 
+// Diálogo com formulário para recolher a password atual e a nova (com confirmação).
 class _ChangePasswordDialog extends StatefulWidget {
   const _ChangePasswordDialog();
 
@@ -108,17 +124,20 @@ class _ChangePasswordDialog extends StatefulWidget {
 }
 
 class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  // Chave do formulário e controladores dos campos de texto.
   final _formKey = GlobalKey<FormState>();
   final _currentCtrl = TextEditingController();
   final _newCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
 
+  // Estado de visibilidade (mostrar/ocultar) de cada campo de password.
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
   @override
   void dispose() {
+    // Liberta recursos dos controladores.
     _currentCtrl.dispose();
     _newCtrl.dispose();
     _confirmCtrl.dispose();
@@ -128,12 +147,15 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // Título do diálogo.
       title: const Text('Alterar password'),
+      // Conteúdo: formulário com três campos (atual, nova, confirmar).
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Campo: password atual, com toggle de visibilidade e validação obrigatória.
             TextFormField(
               controller: _currentCtrl,
               obscureText: _obscureCurrent,
@@ -152,6 +174,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   (v == null || v.isEmpty) ? 'Insira a password atual' : null,
             ),
             const SizedBox(height: 8),
+            // Campo: nova password com toggle de visibilidade.
             TextFormField(
               controller: _newCtrl,
               obscureText: _obscureNew,
@@ -171,6 +194,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   : null,
             ),
             const SizedBox(height: 8),
+            // Campo: confirmar password (deve coincidir com a nova).
             TextFormField(
               controller: _confirmCtrl,
               obscureText: _obscureConfirm,
@@ -191,6 +215,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           ],
         ),
       ),
+      // Ações do diálogo: cancelar ou enviar (valida antes de fechar).
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context, rootNavigator: true).pop(null),
