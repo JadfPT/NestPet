@@ -191,7 +191,6 @@ macos/            # Configuração macOS nativa
 ### 5️⃣ Chat em Tempo Real
 - Canal direto entre utilizador e organização
 - Baseado em Supabase Realtime (WebSockets)
-- Indicador de "a escrever..." (typing status)
 - Histórico de mensagens persistente
 - UI com estilo simples mas moderno
 
@@ -300,10 +299,6 @@ A estrutura de dados está organizada em 6 tabelas principais:
 - `username` - Nome customizado (com email como fallback)
 - `avatar_url` - URL da imagem no Storage
 
-#### **typing_status** - Indicador "a escrever" no chat
-- Armazena quem está a escrever numa conversa específica
-- Atualizado em tempo real para melhor UX
-
 <br>
 
 ### 🔐 Autenticação (Supabase Auth)
@@ -362,10 +357,6 @@ Supabase Realtime sincroniza dados em tempo real via WebSockets:
 2. **Favoritos**
    - INSERT/DELETE em `favorites` dispara update em tempo real
    - Outra aba/dispositivo vê a mudança imediatamente
-
-3. **Typing Status**
-   - UPDATE em `typing_status` notifica em tempo real
-   - "A escrever..." aparece/desaparece instantaneamente
 
 <br>
 
@@ -435,7 +426,6 @@ ON animals FOR UPDATE USING (auth.uid() = org_id);
 
 2. **Supabase insere na base de dados**
    - RLS verifica permissões
-   - Trigger atualiza `typing_status` para false
 
 3. **Realtime notifica**
    - Todos os clients com subscription ativa em `messages` recebem evento
@@ -488,7 +478,6 @@ flutter build web --release
 
 4. **Supabase Realtime**
    - Chat em tempo real via WebSockets
-   - Typing indicators
    - Sincronização instantânea de mensagens
 
 ### Página de Confirmação Customizada

@@ -1,16 +1,14 @@
 /*
-Propósito: Repositório de chat usando Supabase para mensagens e estados de escrita.
-- Fornece leitura, envio de mensagens, marcação de lidas e eventos "a escrever".
+Propósito: Repositório de chat usando Supabase para mensagens.
+- Fornece leitura, envio de mensagens e marcação de lidas.
 - Implementa subscrições por polling para novos conteúdos.
 
 Observações:
 - Estruturas de dados simples (Map) e modelo `Message` para a UI.
-- Tabelas usadas: `messages` e `typing_status`.
-- Alguns métodos de subscrição estão vazios/placeholder (compatibilidade futura).
+- Tabela usada: `messages`.
 */
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/message.dart';
 
 class SupabaseChatRepository {
   // Cliente Supabase.
@@ -44,43 +42,6 @@ class SupabaseChatRepository {
     }
   }
 
-  // Upsert de estado "a escrever" para um par (animal, utilizador humano).
-  Future<void> sendTypingEventUpsert(String animalId, String humanUserId, bool isTyping) async {
-    try {
-      await _client.from('typing_status').upsert({
-        'animal_id': animalId,
-        'user_id': humanUserId,
-        'is_typing': isTyping,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-    } catch (_) {}
-  }
-
-  // Subscrição por polling do estado "a escrever".
-  Stream<Map<String, dynamic>> subscribeTypingEvents(String animalId, String humanUserId) {
-    final controller = StreamController<Map<String, dynamic>>.broadcast();
-    Timer? timer;
-    Future<void> poll() async {
-      try {
-        final res = await _client.from('typing_status').select().eq('animal_id', animalId).eq('user_id', humanUserId).limit(1).maybeSingle();
-        if (res != null) {
-          controller.add(res);
-        }
-      } catch (_) {}
-    }
-
-    poll();
-    timer = Timer.periodic(const Duration(seconds: 1), (_) => poll());
-
-    controller.onCancel = () {
-      try {
-        timer?.cancel();
-      } catch (_) {}
-    };
-
-    return controller.stream;
-  }
-
   // Marca todas as mensagens da conversa como lidas (se ainda não lidas).
   Future<void> markConversationRead(String animalId, String humanUserId) async {
     try {
@@ -93,21 +54,6 @@ class SupabaseChatRepository {
     } catch (_) {}
   }
 
-  // Alias: envia evento typing via upsert.
-  Future<void> sendTypingEvent(String animalId, String humanUserId, bool isTyping) async {
-    return sendTypingEventUpsert(animalId, humanUserId, isTyping);
-  }
-
-  // Placeholder de subscrição typing.
-  Stream<Map<String, dynamic>> subscribeTyping(String animalId, String humanUserId) {
-    return Stream<Map<String, dynamic>>.empty();
-  }
-
-  // Placeholder: mensagens por animal.
-  List<Message> forAnimal(String animalId) {
-    return [];
-  }
-  
   // Envia mensagem construindo `fromRole` e `user_id` conforme origem.
   Future<void> send(String animalId, String senderId, String text, {String? humanUserId, String? fromRole}) async {
 

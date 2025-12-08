@@ -1,9 +1,8 @@
 // Propósito geral: Ecrã de chat do utilizador para conversar com a instituição
-// sobre um animal específico, com histórico, envio de mensagens, indicador de
-// "a escrever" e atualização em tempo real.
+// sobre um animal específico, com histórico, envio de mensagens e atualização em tempo real.
 // Observações:
-// - Subscreve mensagens novas e eventos de typing via repositório de chat em AppState.
-// - Faz scroll automático para o fim e gere estados de envio/typing com timers.
+// - Subscreve mensagens novas via repositório de chat em AppState.
+// - Faz scroll automático para o fim e gere estado de envio.
 // - Usa cores de marca para diferenciar mensagens do utilizador e da instituição.
 // ignore_for_file: use_build_context_synchronously
 
@@ -32,9 +31,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
   StreamSubscription<Map<String, dynamic>>? _sub;
   final ScrollController _scrollCtrl = ScrollController();
   bool _isSending = false;
-  bool _otherTyping = false;
-  StreamSubscription<Map<String, dynamic>>? _typingSub;
-  Timer? _typingTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -122,19 +118,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration.collapsed(hintText: 'Mensagem', hintStyle: TextStyle(color: Colors.white70)),
                         onSubmitted: (_) => _sendMessage(),
-                        onChanged: (s) {
-                          // Emite evento de typing e agenda desligar após inatividade.
-                          final authUser = Supabase.instance.client.auth.currentUser;
-                          final authId = authUser?.id;
-                          final humanId = widget.userId ?? authId;
-                          if (humanId != null) {
-                            context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, humanId, true);
-                            _typingTimer?.cancel();
-                            _typingTimer = Timer(const Duration(seconds: 2), () {
-                              context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, humanId, false);
-                            });
-                          }
-                        },
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -155,16 +138,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
               ),
             ),
           ),
-          // typing indicator
-          // Indicador "a escrever" do outro lado.
-          if (_otherTyping)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('A instituição está a escrever...', style: Theme.of(context).textTheme.bodySmall),
-              ),
-            ),
         ],
       ),
     );
@@ -197,32 +170,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
         context.read<AppState>().chat.markConversationRead(widget.animalId, participantUserId);
       }
     });
-
-    if (participantUserId != null) {
-      // Subscrição de eventos de typing: atualiza indicador e timeout.
-      _typingSub = context.read<AppState>().chat.subscribeTypingEvents(widget.animalId, participantUserId).listen((map) {
-        try {
-          final isTyping = (map['is_typing'] ?? false) as bool;
-          setState(() {
-            _otherTyping = isTyping;
-          });
-          _typingTimer?.cancel();
-          _typingTimer = Timer(const Duration(seconds: 5), () {
-            setState(() {
-              _otherTyping = false;
-            });
-          });
-        } catch (_) {}
-      });
-    }
   }
 
   @override
   void dispose() {
     _sub?.cancel();
     _scrollCtrl.dispose();
-    _typingSub?.cancel();
-    _typingTimer?.cancel();
     ctrl.dispose();
     super.dispose();
   }

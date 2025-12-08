@@ -1,7 +1,6 @@
 /*
 Propósito: Ecrã de chat para instituições sobre um animal específico.
-- Mostra o histórico, envia mensagens e indica quando o utilizador está a escrever.
-- Mantém subscrições em tempo real para novas mensagens e eventos de escrita.
+- Mostra o histórico, envia mensagens e mantém subscrições em tempo real.
 
 Observações:
 - Usa `AppState.chat` para fetch, envio, subscrição e marcação como lidas.
@@ -38,12 +37,6 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
   StreamSubscription<Map<String, dynamic>>? _sub;
   // Controlador de scroll para manter a lista no fim.
   final ScrollController _scrollCtrl = ScrollController();
-  // Subscrição de eventos "typing" do utilizador.
-  StreamSubscription<Map<String, dynamic>>? _typingSub;
-  // Estado que indica se o utilizador está a escrever.
-  bool _userTyping = false;
-  // Timer para cancelar estado de "typing" após inatividade.
-  Timer? _typingTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -136,16 +129,6 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration.collapsed(hintText: 'Responder...', hintStyle: TextStyle(color: Colors.white70)),
                         onSubmitted: (_) => _send(context),
-                        onChanged: (s) {
-                          if (widget.userId.isNotEmpty) {
-                          // Emite evento de "a escrever" com timeout para desligar.
-                            context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, true);
-                            _typingTimer?.cancel();
-                            _typingTimer = Timer(const Duration(seconds: 2), () {
-                              context.read<AppState>().chat.sendTypingEventUpsert(widget.animalId, widget.userId, false);
-                            });
-                          }
-                        },
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -164,16 +147,6 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
               ),
             ),
           ),
-
-          if (_userTyping)
-          // Indicador "está a escrever" do lado do utilizador.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('O utilizador está a escrever...', style: Theme.of(context).textTheme.bodySmall),
-              ),
-            ),
         ],
       ),
     );
@@ -217,23 +190,12 @@ class _OrgChatScreenState extends State<OrgChatScreen> {
       context.read<AppState>().chat.markConversationRead(widget.animalId, widget.userId);
       // Marca a conversa como lida para a instituição.
     });
-
-    _typingSub = context.read<AppState>().chat.subscribeTypingEvents(widget.animalId, widget.userId).listen((map) {
-      try {
-        final isTyping = (map['is_typing'] ?? false) as bool;
-        setState(() {
-          _userTyping = isTyping;
-        });
-      } catch (_) {}
-    });
   }
 
   @override
   void dispose() {
     _sub?.cancel();
-    // Cancela subscrições, timers e controladores.
-    _typingSub?.cancel();
-    _typingTimer?.cancel();
+    // Cancela subscrições e controladores.
     _scrollCtrl.dispose();
     ctrl.dispose();
     super.dispose();
