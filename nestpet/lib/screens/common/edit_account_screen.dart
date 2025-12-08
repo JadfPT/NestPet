@@ -331,7 +331,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                     key: _formKey,
                     child: Column(children: [
                       // Campo de nome.
-                      TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nome de utilizador'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Preenche o nome' : null),
+                      TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Nome'), validator: (v) => (v == null || v.trim().isEmpty) ? 'Preenche o nome' : null),
                       const SizedBox(height: 16),
                       // Botão para guardar mudanças.
                       SizedBox(width: double.infinity, child: FilledButton(onPressed: _saving ? null : () async { final ok = await _save(); if (ok && context.mounted) Navigator.pop(context); }, style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)), padding: const EdgeInsets.symmetric(vertical: 14)), child: _saving ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Guardar mudanças'))),
